@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Sign Up - ABC Company</title>
+<style>
+  /* ★★★ ডার্ক ও লাইট মোডের জন্য CSS ভেরিয়েবল ★★★ */
+  :root {
+    --bg-color: #0b0e11;
+    --panel-color: #161a1e;
+    --panel-hover: #1e2329;
+    --text-color: #eaecef;
+    --text-dim: #848e9c;
+    --border-color: #474d57;
+    --gold: #f0b90b;
+    --btn-text: #202630;
+    --red: #f6465d;
+  }
+
+  [data-theme="light"] {
+    --bg-color: #ffffff;
+    --panel-color: #f5f5f5;
+    --panel-hover: #e8e8e8;
+    --text-color: #1a1a1a;
+    --text-dim: #666666;
+    --border-color: #cccccc;
+    --gold: #d9a70a;
+    --btn-text: #ffffff;
+    --red: #d9304a;
+  }
+
+  * { box-sizing: border-box; }
+  
+  html, body {
+    margin: 0; padding: 0; height: 100%; width: 100%;
+    background: var(--bg-color); color: var(--text-color);
+    font-family: Arial, sans-serif;
+    /* মোবাইলে স্ক্রিন ডানে-বামে সরানো বন্ধ করতে */
+    overflow: hidden; 
+    overscroll-behavior: none;
+    -webkit-text-size-adjust: 100%;
+    touch-action: pan-y;
+    position: fixed;
+    inset: 0;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  #app-container {
+    height: 100vh;
+    height: 100dvh; 
+    height: calc(var(--app-height, 100vh));
+    width: 100%;
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+    padding-top: calc(20px + env(safe-area-inset-top));
+    padding-bottom: calc(20px + env(safe-area-inset-bottom));
+    padding-left: calc(20px + env(safe-area-inset-left));
+    padding-right: calc(20px + env(safe-area-inset-right));
+    overflow-y: auto; 
+  }
+
+  .box { 
+    background: var(--panel-color); 
+    padding:35px 25px; 
+    border-radius:12px; 
+    width:340px; 
+    max-width:100%; 
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    margin: auto;
+    position: relative;
+  }
+  .box h2 { margin-top:0; text-align:center; margin-bottom: 20px; }
+
+  /* Theme & Lang Buttons */
+  .box-header-controls {
+    position: absolute; top: 15px; right: 15px;
+    display: flex; gap: 6px; align-items: center;
+  }
+  .icon-btn, .lang-select {
+    background: transparent; border: 1px solid var(--border-color);
+    color: var(--text-color); border-radius: 6px; padding: 2px 5px;
+    cursor: pointer; font-size: 11px; outline: none;
+  }
+  .lang-select option { background: var(--panel-color); color: var(--text-color); }
+
+  /* Logo Rotator */
+  .logo-container {
+    width: 70px; height: 70px;
+    margin: 0 auto 20px;
+    border-radius: 50%;
+    background: #fff; 
+    display: flex; align-items: center; justify-content: center;
+    border: 2px solid var(--gold);
+    overflow: hidden;
+  }
+  .logo-container img { width: 100%; height: 100%; object-fit: contain; transition: opacity 0.3s ease; }
+
+  .input-group { position: relative; margin: 12px 0; }
+  
+  .input-group input { 
+    width:100%; padding:12px; padding-right: 40px; border-radius:6px; 
+    border:1px solid var(--border-color); background: var(--bg-color); color: var(--text-color); 
+    font-size:16px; /* iOS-এ জুম আটকাতে ১৬px */
+    margin: 0; outline: none;
+  }
+  .input-group input:focus { border-color: var(--gold); }
+
+  /* Eye Icon */
+  .eye-icon {
+    position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+    cursor: pointer; color: var(--text-dim); font-size: 18px; user-select: none;
+  }
+
+  /* Captcha Section */
+  .captcha-row { display: flex; gap: 10px; align-items: center; margin: 12px 0; }
+  .captcha-canvas {
+    background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 6px;
+    padding: 10px 15px; font-weight: bold; font-size: 18px; letter-spacing: 3px;
+    color: var(--gold); user-select: none; flex-shrink: 0; cursor: pointer;
+    font-family: 'Courier New', Courier, monospace;
+  }
+  .captcha-row input { 
+    width: 100%; padding:12px; border-radius:6px; border:1px solid var(--border-color); 
+    background: var(--bg-color); color: var(--text-color); font-size:16px; margin: 0; outline: none;
+  }
+  .captcha-row input:focus { border-color: var(--gold); }
+
+  .box button { 
+    width:100%; padding:12px; margin-top:10px; border:none; border-radius:6px; 
+    background: var(--gold); color: var(--btn-text); font-weight:bold; cursor:pointer; font-size:16px;
+  }
+  .box button:active { opacity: 0.9; }
+  
+  .msg { text-align:center; margin-top:10px; font-size:14px; min-height: 20px; }
+  a { color: var(--gold); text-decoration: none; }
+
+  /* ===== Verification Overlay ===== */
+  .verify-overlay {
+    display:none;
+    position:fixed; inset:0; background: var(--bg-color);
+    align-items:center; justify-content:center;
+    flex-direction:column; z-index:9999;
+  }
+  .verify-overlay.active { display:flex; }
+
+  .verify-spinner {
+    width:90px; height:90px; border-radius:50%;
+    border:4px solid var(--border-color);
+    border-top:4px solid var(--gold);
+    animation: spin 0.9s linear infinite;
+    margin-bottom:20px;
+  }
+
+  .verify-check-wrap { width:90px; height:90px; margin-bottom:20px; }
+  .verify-check-circle {
+    fill:none; stroke:#2f7fff; stroke-width:4;
+    stroke-dasharray:264; stroke-dashoffset:264;
+    animation: drawCircle 0.5s ease forwards;
+  }
+  .verify-check-mark {
+    fill:none; stroke:#2f7fff; stroke-width:5;
+    stroke-linecap:round; stroke-linejoin:round;
+    stroke-dasharray:48; stroke-dashoffset:48;
+    animation: drawCheck 0.35s ease forwards 0.45s;
+  }
+  @keyframes spin { 100% { transform:rotate(360deg); } }
+  @keyframes drawCircle { to { stroke-dashoffset:0; } }
+  @keyframes drawCheck { to { stroke-dashoffset:0; } }
+
+  .verify-title { font-size:20px; font-weight:bold; color: var(--text-color); margin-bottom:6px; }
+  .verify-subtitle { font-size:13px; color: var(--text-dim); }
+</style>
+</head>
+<body>
+
+<div id="app-container">
+  <div class="box">
+    
+    <!-- থিম ও ভাষা বাটন -->
+    <div class="box-header-controls">
+      <button class="icon-btn" onclick="toggleTheme()" title="Toggle Theme">
+        <span id="theme-icon">🌙</span>
+      </button>
+      <select class="lang-select" id="langSelect" onchange="changeLanguage(this.value)">
+        <option value="en">EN</option>
+        <option value="bn">BN</option>
+        <option value="hi">HI</option>
+        <option value="zh">ZH</option>
+        <option value="es">ES</option>
+        <option value="ar">AR</option>
+        <option value="fr">FR</option>
+        <option value="pt">PT</option>
+        <option value="ru">RU</option>
+        <option value="ja">JA</option>
+      </select>
+    </div>
+
+    <!-- Logo Rotator -->
+    <div class="logo-container">
+      <img id="dynamicLogo" src="tradewallet.png" alt="Logo">
+    </div>
+
+    <h2 data-i18n="create_account">Create Account</h2>
+    
+    <div class="input-group">
+      <input type="text" id="fullname" placeholder="Full Name" data-i18n="full_name" autocomplete="off">
+    </div>
+
+    <div class="input-group">
+      <input type="text" id="phone" placeholder="Email or Phone number" data-i18n="email_phone" autocomplete="off">
+    </div>
+    
+    <div class="input-group">
+      <input type="password" id="password" placeholder="Password" data-i18n="password">
+      <span class="eye-icon" id="togglePassword">👁️</span>
+    </div>
+
+    <!-- Captcha -->
+    <div class="captcha-row">
+      <div class="captcha-canvas" id="captchaCanvas"></div>
+      <input type="text" id="captchaInput" placeholder="Enter code" autocomplete="off">
+    </div>
+
+    <button onclick="signUp()" data-i18n="signup">Sign Up</button>
+    <p class="msg" id="msg"></p>
+    <p class="msg"><span data-i18n="already_account">Already have an account?</span> <a href="login.html" data-i18n="login">Log In</a></p>
+  </div>
+</div>
+
+<div class="verify-overlay" id="verify-overlay">
+  <div id="verify-icon-area">
+    <div class="verify-spinner" id="verify-spinner"></div>
+  </div>
+  <div class="verify-title" id="verify-title">Email Verification</div>
+  <div class="verify-subtitle" id="verify-subtitle"></div>
+</div>
+
+<!-- ★★★ lang-theme.js যুক্ত করা হলো ★★★ -->
+<script src="lang-theme.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+// মোবাইলের আসল উচ্চতা ঠিক রাখার জন্য
+function setAppHeight(){
+  const h = (window.visualViewport ? window.visualViewport.height : window.innerHeight);
+  document.documentElement.style.setProperty('--app-height', h + 'px');
+  window.scrollTo(0, 0);
+}
+setAppHeight();
+window.addEventListener('resize', setAppHeight);
+if (window.visualViewport){
+  window.visualViewport.addEventListener('resize', setAppHeight);
+  window.visualViewport.addEventListener('scroll', setAppHeight);
+}
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDJoPr8RvE1xkNTKRr5kwTx6E51GCMn_HE",
+  authDomain: "abc-company-6272a.firebaseapp.com",
+  projectId: "abc-company-6272a",
+  storageBucket: "abc-company-6272a.firebasestorage.app",
+  messagingSenderId: "1026212780106",
+  appId: "1:1026212780106:web:985ec1bc35837d6320eeb3"
+};
+firebase.initializeApp(firebaseConfig);
+
+// ==================== লোগো রোটেশন (প্রতি ৩ সেকেন্ড) ====================
+const logos = [
+  'tradewallet.png', 
+  'https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/128/color/btc.png',
+  'https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/128/color/eth.png'
+];
+let currentLogoIndex = 0;
+const logoImg = document.getElementById('dynamicLogo');
+
+setInterval(() => {
+  currentLogoIndex = (currentLogoIndex + 1) % logos.length;
+  logoImg.style.opacity = 0;
+  setTimeout(() => {
+    logoImg.src = logos[currentLogoIndex];
+    logoImg.style.opacity = 1;
+  }, 300);
+}, 3000); 
+
+// ==================== পাসওয়ার্ড চোখ ====================
+const togglePassword = document.getElementById('togglePassword');
+const passwordInput = document.getElementById('password');
+
+togglePassword.addEventListener('click', () => {
+  const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+  passwordInput.setAttribute('type', type);
+  togglePassword.textContent = type === 'password' ? '👁️' : '🙈';
+});
+
+// ==================== সহজ ক্যাপচা (শুধু সংখ্যা) ====================
+let currentCaptcha = '';
+const captchaCanvas = document.getElementById('captchaCanvas');
+
+function generateCaptcha() {
+  currentCaptcha = Math.floor(10000 + Math.random() * 90000).toString();
+  captchaCanvas.textContent = currentCaptcha;
+}
+generateCaptcha(); 
+captchaCanvas.addEventListener('click', generateCaptcha); 
+
+// ==================== ইনপুট ফিল্ড ফরম্যাটিং ====================
+document.getElementById('fullname').addEventListener('input', function () {
+  this.value = this.value.toUpperCase();
+});
+document.getElementById('phone').addEventListener('input', function () {
+  this.value = this.value.toLowerCase();
+});
+
+// ==================== অ্যাকাউন্ট আইডি জেনারেটর ====================
+async function getNextAccountId() {
+  const counterRef = firebase.firestore().collection('counters').doc('users');
+  const nextNumber = await firebase.firestore().runTransaction(async (t) => {
+    const doc = await t.get(counterRef);
+    let current = 1000;
+    const existingCount = doc.exists ? doc.data().count : undefined;
+    if (typeof existingCount === 'number' && !isNaN(existingCount)) {
+      current = existingCount;
+    }
+    const next = current + 1;
+    t.set(counterRef, { count: next });
+    return next;
+  });
+  return 'AB' + nextNumber;
+}
+
+// ==================== সাইন আপ ফাংশন ====================
+async function signUp() {
+  const fullName = document.getElementById('fullname').value.trim();
+  const identifier = document.getElementById('phone').value.trim();
+  const password = document.getElementById('password').value;
+  const captchaEntered = document.getElementById('captchaInput').value.trim();
+  const msg = document.getElementById('msg');
+  const overlay = document.getElementById('verify-overlay');
+  const iconArea = document.getElementById('verify-icon-area');
+  const title = document.getElementById('verify-title');
+  const subtitle = document.getElementById('verify-subtitle');
+  const lang = localStorage.getItem('appLang') || 'en';
+
+  msg.textContent = '';
+
+  // ১. খালি ফিল্ড চেক
+  if (!fullName || !identifier || !password || !captchaEntered) {
+    msg.style.color = 'var(--red)';
+    msg.textContent = translations[lang]['fill_all_fields'] || 'Please fill in all fields.';
+    return;
+  }
+
+  // ২. ক্যাপচা চেক
+  if (captchaEntered !== currentCaptcha) {
+    msg.style.color = 'var(--red)';
+    msg.textContent = translations[lang]['invalid_captcha'] || 'Invalid captcha code!';
+    generateCaptcha();
+    document.getElementById('captchaInput').value = '';
+    return;
+  }
+
+  // ৩. পাসওয়ার্ড লেংথ চেক
+  if (password.length < 6) {
+    msg.style.color = 'var(--red)';
+    msg.textContent = translations[lang]['password_short'] || 'Password must be at least 6 characters.';
+    return;
+  }
+
+  const isEmail = identifier.includes('@');
+  const email = isEmail ? identifier : identifier.replace(/\D/g,'') + '@abccompany-users.com';
+
+  const loadingTitle = isEmail ? (translations[lang]['email_verify'] || 'Email Verification') : (translations[lang]['mobile_verify'] || 'Mobile Number Verification');
+  const successTitle = isEmail ? (translations[lang]['email_verified'] || 'Email Verified') : (translations[lang]['mobile_verified'] || 'Mobile Number Verification Success');
+  const successSubtitle = isEmail
+    ? (translations[lang]['email_verified_sub'] || 'Your email address was successfully verified.')
+    : (translations[lang]['mobile_verified_sub'] || 'Your mobile number was successfully verified.');
+
+  // ওভারলে দেখানো
+  overlay.classList.add('active');
+  iconArea.innerHTML = '<div class="verify-spinner"></div>';
+  title.textContent = loadingTitle;
+  subtitle.textContent = '';
+
+  const minSpinnerTime = new Promise(resolve => setTimeout(resolve, 2000));
+
+  const signupWork = (async () => {
+    try {
+      await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+    } catch (persistErr) {
+      try {
+        await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.SESSION);
+      } catch (sessionErr) {
+        await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.NONE);
+      }
+    }
+
+    const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
+    const user = userCredential.user;
+    const accountId = await getNextAccountId();
+    await firebase.firestore().collection('users').doc(user.uid).set({
+      fullName: fullName,
+      accountId: accountId,
+      identifier: identifier,
+      email: email,
+      balance: 0,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  })();
+
+  try {
+    await Promise.all([signupWork, minSpinnerTime]);
+
+    iconArea.innerHTML = `
+      <svg class="verify-check-wrap" viewBox="0 0 90 90">
+        <circle class="verify-check-circle" cx="45" cy="45" r="42"></circle>
+        <path class="verify-check-mark" d="M28 46l12 12 22-24"></path>
+      </svg>`;
+    title.textContent = successTitle;
+    subtitle.textContent = successSubtitle;
+
+    setTimeout(() => {
+      window.location.href = 'market.html';
+    }, 1500);
+  } catch (err) {
+    overlay.classList.remove('active');
+    msg.style.color = 'var(--red)';
+    
+    if (err.code === 'auth/email-already-in-use') {
+      msg.textContent = translations[lang]['email_in_use'] || 'This email/phone is already registered.';
+    } else if (err.code === 'auth/weak-password') {
+      msg.textContent = translations[lang]['password_weak'] || 'Password is too weak.';
+    } else {
+      msg.textContent = err.message;
+    }
+    
+    generateCaptcha();
+    document.getElementById('captchaInput').value = '';
+  }
+}
+</script>
+</body>
+</html>

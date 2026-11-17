@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Activity - ABC Company</title>
+<style>
+  /* ★★★ ডার্ক ও লাইট মোডের জন্য CSS ভেরিয়েবল ★★★ */
+  :root {
+    --bg-color: #0a0a0d;
+    --panel-color: #14141a;
+    --panel-hover: #1c1c24;
+    --text-color: #f2f2f5;
+    --text-dim: #8b8b98;
+    --text-faint: #55555f;
+    --border-color: #262631;
+    --gold: #f0b90b;
+    --btn-text: #171313;
+    --green: #16c784;
+    --green-bg: rgba(22,199,132,0.12);
+    --red: #ea3943;
+    --red-bg: rgba(234,57,67,0.12);
+  }
+
+  [data-theme="light"] {
+    --bg-color: #ffffff;
+    --panel-color: #f5f5f5;
+    --panel-hover: #e8e8e8;
+    --text-color: #1a1a1a;
+    --text-dim: #666666;
+    --text-faint: #999999;
+    --border-color: #dcdcdc;
+    --gold: #d9a70a;
+    --btn-text: #ffffff;
+    --green: #0a9d62;
+    --green-bg: rgba(10,157,98,0.1);
+    --red: #d9304a;
+    --red-bg: rgba(217,48,74,0.1);
+  }
+
+  * { box-sizing: border-box; }
+  html { 
+    overflow-x: hidden; 
+    width: 100%; 
+    height: 100%;
+  }
+  
+  body { 
+    margin:0; font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+    background: var(--bg-color); color: var(--text-color); 
+    padding-bottom: calc(20px + env(safe-area-inset-bottom)); 
+    width:100%; height: 100vh;
+    /* মোবাইলে স্ক্রল ও জুম বন্ধ করতে */
+    overflow: hidden; 
+    overscroll-behavior: none;
+    -webkit-text-size-adjust:100%;
+    touch-action: pan-y;
+    position: fixed;
+    inset: 0;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  .app {
+    max-width:480px; margin:0 auto; height: 100vh;
+    background: var(--bg-color); display:flex; flex-direction:column;
+  }
+
+  /* Header */
+  .header {
+    display:flex; align-items:center; gap:14px;
+    padding: calc(18px + env(safe-area-inset-top)) 16px 14px;
+    position:relative; 
+    background: var(--bg-color);
+    border-bottom: 1px solid var(--border-color);
+    z-index:5;
+  }
+  .back-btn {
+    width:34px; height:34px; border-radius:10px;
+    background: var(--panel-color); border:1px solid var(--border-color);
+    display:flex; align-items:center; justify-content:center;
+    color: var(--text-color); cursor:pointer; flex-shrink:0;
+  }
+  .back-btn:hover{ background: var(--panel-hover); }
+  .header h1 { font-size:19px; font-weight:600; margin:0; }
+
+  .header-controls {
+    position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
+    display: flex; gap: 8px; align-items: center;
+  }
+  .icon-btn, .lang-select {
+    background: transparent; border: 1px solid var(--border-color);
+    color: var(--text-color); border-radius: 6px; padding: 4px 6px;
+    cursor: pointer; font-size: 12px; outline: none;
+  }
+  .lang-select option { background: var(--panel-color); color: var(--text-color); }
+
+  /* Tabs */
+  .tabs { display:flex; gap:6px; padding:4px 16px 16px; overflow-x: auto; }
+  .tab {
+    padding:8px 16px; border-radius:20px; font-size:13.5px; font-weight:500;
+    border:1px solid var(--border-color); background:transparent;
+    color: var(--text-dim); cursor:pointer; white-space:nowrap;
+  }
+  .tab.active { background: var(--gold); border-color: var(--gold); color: var(--btn-text); }
+
+  .content { flex:1; padding:0 16px 32px; overflow-y:auto; -webkit-overflow-scrolling: touch; }
+
+  .section-label { font-size:13px; color: var(--text-dim); padding:18px 2px 10px; font-weight:500; }
+  .section-label:first-child{ padding-top:6px; }
+
+  .card { background: var(--panel-color); border:1px solid var(--border-color); border-radius:14px; overflow:hidden; }
+
+  .row { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px 16px; }
+  .row + .row { border-top:1px solid var(--border-color); }
+
+  .row-left { display:flex; flex-direction:column; gap:4px; min-width:0; }
+  .row-title { font-size:14.5px; font-weight:600; color: var(--text-color); }
+  .row-sub { font-size:12px; color: var(--text-faint); }
+  .row-sub .ref { color: var(--text-faint); }
+
+  .row-right { display:flex; flex-direction:column; align-items:flex-end; gap:6px; flex-shrink:0; }
+
+  .pill { font-size:13px; font-weight:700; padding:4px 10px; border-radius:8px; white-space:nowrap; }
+  .pill.pos { color: var(--green); background: var(--green-bg); }
+  .pill.neg { color: var(--red); background: var(--red-bg); }
+
+  .status { font-size:11.5px; font-weight:500; padding:2px 8px; border-radius:8px; display:inline-block; }
+  .status.completed { color: var(--text-dim); background:transparent; padding:0; }
+  .status.success { color: var(--green); background: var(--green-bg); }
+  .status.pending { color: var(--gold); background: rgba(240,185,11,0.12); }
+  .status.rejected { color: var(--red); background: var(--red-bg); }
+  .status.error { color: var(--red); background: var(--red-bg); }
+
+  .amount { font-size:14.5px; font-weight:700; }
+
+  .empty { text-align:center; padding:60px 20px; color: var(--text-faint); font-size:13.5px; }
+
+  ::-webkit-scrollbar{ width:0; height:0; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="header">
+    <button class="back-btn" aria-label="Back" onclick="window.history.back()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+    </button>
+    <h1 data-i18n="activity">Activity</h1>
+    
+    <div class="header-controls">
+      <button class="icon-btn" onclick="toggleTheme()" title="Toggle Theme">
+        <span id="theme-icon">🌙</span>
+      </button>
+      <select class="lang-select" id="langSelect" onchange="changeLanguage(this.value)">
+        <option value="en">EN</option>
+        <option value="bn">BN</option>
+        <option value="hi">HI</option>
+        <option value="zh">ZH</option>
+        <option value="es">ES</option>
+        <option value="ar">AR</option>
+        <option value="fr">FR</option>
+        <option value="pt">PT</option>
+        <option value="ru">RU</option>
+        <option value="ja">JA</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="all" data-i18n="all">All</button>
+    <button class="tab" data-tab="trades" data-i18n="trades">Trades</button>
+    <button class="tab" data-tab="deposit" data-i18n="deposit">Deposit</button>
+    <button class="tab" data-tab="withdraw" data-i18n="withdraw">Withdraw</button>
+  </div>
+
+  <div class="content" id="content">
+    <div class="empty">Loading...</div>
+  </div>
+</div>
+
+<!-- ★★★ lang-theme.js যুক্ত করা হলো ★★★ -->
+<script src="lang-theme.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyDJoPr8RvE1xkNTKRr5kwTx6E51GCMn_HE",
+  authDomain: "abc-company-6272a.firebaseapp.com",
+  projectId: "abc-company-6272a",
+  storageBucket: "abc-company-6272a.firebasestorage.app",
+  messagingSenderId: "1026212780106",
+  appId: "1:1026212780106:web:985ec1bc35837d6320eeb3"
+};
+firebase.initializeApp(firebaseConfig);
+
+let trades = [];
+let deposits = [];
+let withdrawals = [];
+let currentTab = 'all';
+
+function formatDate(ts) {
+  if (!ts || !ts.toDate) return '—';
+  const d = ts.toDate();
+  return d.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }) +
+    ', ' + d.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
+}
+
+function sortTime(ts) {
+  if (!ts || !ts.toDate) return 0;
+  return ts.toDate().getTime();
+}
+
+function fmtSigned(n){
+  const sign = n >= 0 ? "+" : "-";
+  return `${sign}${Math.abs(n).toFixed(2)} USDT`;
+}
+
+function tradeStatusLabel(status) {
+  if (status === 'completed') return 'Completed';
+  if (status === 'pending') return 'Pending';
+  if (status === 'error') return 'Error';
+  return status;
+}
+
+function depositWithdrawStatus(status) {
+  if (status === 'approved') return { text: 'Success', cls: 'success' };
+  if (status === 'rejected') return { text: 'Rejected', cls: 'rejected' };
+  return { text: 'Pending', cls: 'pending' };
+}
+
+function tradeRow(t){
+  const pending = t.status !== 'completed';
+  const positive = t.profit >= 0;
+  return `
+    <div class="row">
+      <div class="row-left">
+        <div class="row-title">${t.symbol}</div>
+        <div class="row-sub">${t.date}</div>
+        <div class="row-sub ref">Ref: ${t.serial}</div>
+      </div>
+      <div class="row-right">
+        ${pending
+          ? `<span class="status ${t.status}">${tradeStatusLabel(t.status)}</span>`
+          : `<span class="pill ${positive ? "pos" : "neg"}">${fmtSigned(t.profit)}</span><span class="status completed">${tradeStatusLabel(t.status)}</span>`
+        }
+      </div>
+    </div>`;
+}
+
+function depositRow(d){
+  const badge = depositWithdrawStatus(d.status);
+  return `
+    <div class="row">
+      <div class="row-left">
+        <div class="row-title">Deposit</div>
+        <div class="row-sub">${d.date}</div>
+        <div class="row-sub ref">Ref: ${d.serial}</div>
+      </div>
+      <div class="row-right">
+        <span class="amount">${d.amount.toFixed(2)} USDT</span>
+        <span class="status ${badge.cls}">${badge.text}</span>
+      </div>
+    </div>`;
+}
+
+function withdrawRow(w){
+  const badge = depositWithdrawStatus(w.status);
+  return `
+    <div class="row">
+      <div class="row-left">
+        <div class="row-title">Withdrawal</div>
+        <div class="row-sub">${w.date}</div>
+        <div class="row-sub ref">Ref: ${w.serial}</div>
+      </div>
+      <div class="row-right">
+        <span class="amount">-${w.amount.toFixed(2)} USDT</span>
+        <span class="status ${badge.cls}">${badge.text}</span>
+      </div>
+    </div>`;
+}
+
+function renderSection(label, rowsHtml){
+  if(!rowsHtml){
+    return `<div class="section-label">${label}</div><div class="card"><div class="empty">No activity yet</div></div>`;
+  }
+  return `<div class="section-label">${label}</div><div class="card">${rowsHtml}</div>`;
+}
+
+function render(tab){
+  currentTab = tab;
+  const el = document.getElementById("content");
+  let html = "";
+
+  if(tab === "all" || tab === "trades"){
+    html += renderSection("Recent Trades", trades.map(tradeRow).join(""));
+  }
+  if(tab === "all" || tab === "deposit"){
+    html += renderSection("Deposit", deposits.map(depositRow).join(""));
+  }
+  if(tab === "all" || tab === "withdraw"){
+    html += renderSection("Withdraw", withdrawals.map(withdrawRow).join(""));
+  }
+
+  el.innerHTML = html;
+
+  // Re-apply translation on new content
+  if (typeof changeLanguage === 'function') {
+    changeLanguage(localStorage.getItem('appLang') || 'en');
+  }
+}
+
+document.querySelectorAll(".tab").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    document.querySelectorAll(".tab").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+    render(btn.dataset.tab);
+  });
+});
+
+firebase.auth().onAuthStateChanged(user => {
+  if (!user) {
+    window.location.href = 'login.html';
+    return;
+  }
+
+  const db = firebase.firestore();
+
+  db.collection('trades')
+    .where('uid', '==', user.uid)
+    .onSnapshot(snap => {
+      trades = snap.docs.map(d => {
+        const data = d.data();
+        let profit = 0;
+        if (data.result === 'win') profit = data.expectedReturn || 0;
+        else if (data.result === 'lose') profit = -(data.amount || 0);
+        return {
+          symbol: data.symbol || '—',
+          profit: profit,
+          status: data.status || 'pending',
+          date: formatDate(data.createdAt),
+          _t: sortTime(data.createdAt),
+          serial: data.orderNumber || d.id
+        };
+      }).sort((a, b) => b._t - a._t);
+      render(currentTab);
+    }, () => {
+      document.getElementById('content').innerHTML = `<div class="empty">Failed to load activity</div>`;
+    });
+
+  db.collection('deposits')
+    .where('uid', '==', user.uid)
+    .onSnapshot(snap => {
+      deposits = snap.docs.map(d => {
+        const data = d.data();
+        return {
+          amount: data.claimedAmount || 0,
+          date: formatDate(data.createdAt || data.timestamp),
+          _t: sortTime(data.createdAt || data.timestamp),
+          serial: data.referenceId || data.txnId || d.id,
+          status: data.status || 'pending'
+        };
+      }).sort((a, b) => b._t - a._t);
+      render(currentTab);
+    });
+
+  db.collection('withdrawals')
+    .where('uid', '==', user.uid)
+    .onSnapshot(snap => {
+      withdrawals = snap.docs.map(d => {
+        const data = d.data();
+        return {
+          amount: data.amount || 0,
+          date: formatDate(data.createdAt || data.timestamp),
+          _t: sortTime(data.createdAt || data.timestamp),
+          serial: data.referenceId || data.txnId || d.id,
+          status: data.status || 'pending'
+        };
+      }).sort((a, b) => b._t - a._t);
+      render(currentTab);
+    });
+});
+</script>
+</body>
+</html>

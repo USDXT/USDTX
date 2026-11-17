@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Trade - ABC Company</title>
+<!-- Lightweight Charts লাইব্রেরি -->
+<script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
+<style>
+  :root {
+    --bg-color: #0b0e11;
+    --panel-color: #161a1e;
+    --panel-hover: #1e2329;
+    --text-color: #eaecef;
+    --text-dim: #848e9c;
+    --border-color: #2b3139;
+    --gold: #f0b90b;
+    --btn-text: #202630;
+    --green: #0ecb81;
+    --red: #f6465d;
+  }
+
+  [data-theme="light"] {
+    --bg-color: #ffffff;
+    --panel-color: #f5f5f5;
+    --panel-hover: #e8e8e8;
+    --text-color: #1a1a1a;
+    --text-dim: #666666;
+    --border-color: #dcdcdc;
+    --gold: #d9a70a;
+    --btn-text: #ffffff;
+    --green: #0a9d62;
+    --red: #d9304a;
+  }
+
+  * { box-sizing:border-box; }
+  html { overflow-x: hidden; width: 100%; height: 100%; }
+  
+  body { 
+    margin:0; font-family:Arial, sans-serif; 
+    background: var(--bg-color); color: var(--text-color); 
+    padding-bottom: calc(70px + env(safe-area-inset-bottom)); 
+    width:100%; height: 100vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: none;
+    -webkit-text-size-adjust:100%;
+    touch-action: pan-y;
+    position: fixed;
+    inset: 0;
+    transition: background 0.3s, color 0.3s;
+  }
+  
+  header { 
+    display:flex; align-items:center; justify-content:center; 
+    padding: calc(16px + env(safe-area-inset-top)) 20px 16px; 
+    position:relative; 
+    background: var(--bg-color);
+    border-bottom: 1px solid var(--border-color);
+    z-index: 1000;
+  }
+  header h1 { font-size:20px; margin:0; color: var(--gold); }
+  .back-btn {
+    position:absolute; left:16px; top:50%; transform:translateY(-50%);
+    background:none; border:none; color: var(--text-color); font-size:20px; cursor:pointer;
+  }
+  .header-controls {
+    position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
+    display: flex; gap: 8px; align-items: center;
+  }
+  .icon-btn, .lang-select {
+    background: transparent; border: 1px solid var(--border-color);
+    color: var(--text-color); border-radius: 6px; padding: 4px 6px;
+    cursor: pointer; font-size: 12px; outline: none;
+  }
+  .lang-select option { background: var(--panel-color); color: var(--text-color); }
+
+  .main-content {
+    padding-top: 20px;
+    padding-bottom: 90px;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  #coin-list-view .coin-row {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 0; border-bottom:1px solid var(--border-color); cursor:pointer;
+  }
+  #coin-list-view .coin-row:active { background: var(--panel-hover); }
+  .coin-left { display:flex; align-items:center; gap:10px; }
+  .coin-left img { width:28px; height:28px; border-radius:50%; }
+  .coin-name { font-weight:bold; }
+  .coin-sub { color: var(--text-dim); font-size:12px; }
+  .coin-right { text-align:right; }
+  .coin-price { font-weight:bold; }
+  .change-up { color: var(--green); }
+  .change-down { color: var(--red); }
+
+  #chart-view { display:none; }
+
+  .chart-header { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+  .chart-header img { width:26px; height:26px; border-radius:50%; }
+  .chart-header .pair-name { font-weight:bold; font-size:18px; }
+  
+  .chart-card { background: var(--panel-color); border-radius:12px; padding:16px; }
+  .price-row { display:flex; align-items:baseline; gap:10px; margin-bottom:12px; }
+  .price-row .big-price { font-size:22px; font-weight:bold; }
+  
+  .ohlc-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px 20px; margin-bottom:14px; font-size:13px; color: var(--text-dim); }
+  .ohlc-grid span.val { color: var(--text-color); font-weight:bold; }
+  
+  .interval-select {
+    background: var(--panel-hover); color: var(--text-color); border:1px solid var(--border-color); border-radius:6px;
+    padding:6px 10px; margin-left:auto; cursor:pointer;
+    font-size: 13px;
+  }
+
+  #chart-container {
+    width: 100%;
+    height: 250px;
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .time-labels { display:flex; justify-content:space-between; font-size:11px; color: var(--text-dim); margin-top:4px; }
+
+  .duration-row { 
+    display: grid; 
+    grid-template-columns: repeat(5, 1fr); 
+    gap: 6px; 
+    margin-top:16px; 
+  }
+  .duration-box {
+    background: var(--panel-hover); border:1px solid var(--border-color); border-radius:8px;
+    padding:10px 2px; text-align:center; cursor:pointer; transition:0.15s;
+  }
+  .duration-box:active { transform:scale(0.97); }
+  .duration-box.selected { border-color: var(--gold); background:rgba(240,185,11,0.1); }
+  .duration-time { font-size:15px; font-weight:bold; color: var(--gold); }
+  .duration-return { font-size:9px; color: var(--text-dim); margin-top:4px; line-height:1.3; }
+
+  .chart-visual {
+    max-height:500px; opacity:1; overflow:hidden;
+    transition:max-height 0.45s ease, opacity 0.35s ease, margin-top 0.45s ease;
+  }
+  .chart-visual.collapsed { max-height:0; opacity:0; margin-top:0; }
+  
+  .invest-section {
+    margin-top:40px; max-height:0; opacity:0; transform:translateY(24px);
+    overflow:hidden;
+    transition:max-height 0.45s ease, opacity 0.35s ease, transform 0.4s ease, margin-top 0.45s ease;
+  }
+  .invest-section.show { max-height:600px; opacity:1; transform:translateY(0); }
+
+  .amount-box { display:flex; align-items:center; gap:8px; }
+  .amount-box input {
+    flex:1; min-width:0; width:100%;
+    text-align:center; font-size:16px !important; font-weight:bold;
+    background: var(--panel-hover); border:1px solid var(--border-color); color: var(--text-color);
+    padding:12px; border-radius:8px;
+    -moz-appearance:textfield;
+  }
+  .amount-box input::-webkit-outer-spin-button,
+  .amount-box input::-webkit-inner-spin-button {
+    -webkit-appearance:none; margin:0;
+  }
+  .amount-box input::placeholder { color: var(--text-dim); font-weight:normal; font-size:14px; }
+  
+  .amt-btn {
+    width:44px; height:44px; border-radius:8px; border:1px solid var(--border-color);
+    background: var(--panel-hover); color: var(--text-color); font-size:20px; cursor:pointer; flex-shrink:0;
+  }
+  .amt-btn:active { background: var(--border-color); }
+  .amount-range { text-align:center; font-size:12px; color: var(--text-dim); margin-top:6px; }
+  .amount-error { text-align:center; font-size:12px; color: var(--red); margin-top:4px; min-height:14px; }
+
+  .balance-display {
+    text-align:center; font-size:13px; font-weight:bold; color: var(--gold);
+    border:1px solid var(--gold); border-radius:6px; padding:8px 10px;
+    margin-top:8px; background:rgba(240,185,11,0.08);
+  }
+
+  .direction-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px; }
+  .down-btn, .up-btn {
+    padding:14px; border-radius:8px; font-weight:bold; font-size:15px; cursor:pointer;
+  }
+  .down-btn { background:rgba(246,70,93,0.12); border:1px solid var(--red); color: var(--red); }
+  .up-btn { background:rgba(14,203,129,0.12); border:1px solid var(--green); color: var(--green); }
+  .down-btn:disabled, .up-btn:disabled { opacity:0.4; cursor:not-allowed; }
+
+  .bottom-nav {
+    position:fixed; bottom:0; left:0; right:0; background: var(--panel-color);
+    display:flex; justify-content:space-around; 
+    padding: 10px 0 calc(10px + env(safe-area-inset-bottom)) 0;
+    border-top:1px solid var(--border-color);
+    z-index: 999;
+    transition: background 0.3s;
+  }
+  .bottom-nav a { text-decoration:none; }
+  .bottom-nav div { text-align:center; color: var(--text-dim); font-size:11px; cursor:pointer; }
+  .bottom-nav div.active { color: var(--gold); }
+  .bottom-nav .ic {
+    font-size:18px; width:38px; height:38px; line-height:38px;
+    margin:0 auto 2px; border-radius:50%; transition:0.2s;
+  }
+  .bottom-nav div.active .ic {
+    background:rgba(240,185,11,0.15);
+    box-shadow:0 0 0 6px rgba(240,185,11,0.08);
+  }
+
+  /* Trade Result Popup */
+  .tm-overlay {
+    display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6);
+    align-items:center; justify-content:center; z-index:9999; padding:20px;
+  }
+  .tm-overlay.active { display:flex; }
+  .tm-card {
+    width:100%; max-width:320px; background:linear-gradient(160deg,#1e5fe0,#0f3fae);
+    border-radius:22px; padding:28px 22px; text-align:center; color:#fff;
+    box-shadow:0 12px 40px rgba(0,0,0,0.5);
+  }
+  .tm-title { font-size:19px; font-weight:bold; margin-bottom:18px; }
+  .tm-timer-circle {
+    width:72px; height:72px; border-radius:50%; border:3px solid var(--gold);
+    display:flex; align-items:center; justify-content:center;
+    margin:0 auto 20px; font-weight:bold; font-size:16px; color: var(--gold);
+  }
+  .tm-result { font-size:28px; font-weight:bold; margin-bottom:18px; display:none; }
+  .tm-rows { text-align:left; margin-bottom:14px; }
+  .tm-row {
+    display:flex; justify-content:space-between; padding:7px 0;
+    font-size:13.5px; color:#c9d6f5; border-bottom:1px solid rgba(255,255,255,0.08);
+  }
+  .tm-row:last-child { border-bottom:none; }
+  .tm-row span:last-child { color:#fff; font-weight:bold; }
+  .tm-order-number { font-size:11px; color:#9fb3e6; word-break:break-all; margin-top:10px; }
+  .tm-again-btn {
+    display:none; margin-top:18px; width:100%; padding:13px; border:none;
+    border-radius:24px; background:#eef3ff; color:#1a4fce; font-weight:bold;
+    font-size:14px; cursor:pointer;
+  }
+  .tm-again-btn:active { background:#d9e4ff; }
+
+  /* Welcome Loading */
+  .welcome-loading {
+    display:flex; align-items:center; justify-content:center;
+    height:60vh; text-align:center; padding:20px;
+    position:relative; overflow:hidden;
+  }
+  .candle-bg {
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    gap:14px; z-index:0; opacity:0.55; pointer-events:none;
+  }
+  .candle-bar {
+    width:22px; border:2px solid var(--text-color); border-radius:3px; position:relative;
+    animation: candlePulse 1.8s ease-in-out infinite;
+  }
+  .candle-bar::before {
+    content:''; position:absolute; left:50%; top:-16px; bottom:-16px;
+    width:2px; background: var(--text-color); transform:translateX(-50%); z-index:-1;
+  }
+  .candle-bar.up { background: var(--green); }
+  .candle-bar.down { background: var(--red); }
+  .candle-bar:nth-child(1) { animation-delay:0s; }
+  .candle-bar:nth-child(2) { animation-delay:0.25s; }
+  .candle-bar:nth-child(3) { animation-delay:0.5s; }
+  .candle-bar:nth-child(4) { animation-delay:0.75s; }
+  .candle-bar:nth-child(5) { animation-delay:1s; }
+  .candle-bar:nth-child(6) { animation-delay:1.25s; }
+  .candle-bar:nth-child(7) { animation-delay:1.5s; }
+  .candle-bar:nth-child(8) { animation-delay:1.75s; }
+  .candle-bar:nth-child(9) { animation-delay:2s; }
+  .candle-bar:nth-child(10) { animation-delay:2.25s; }
+  
+  @keyframes candlePulse {
+    0%, 100% { height:60px; }
+    50% { height:150px; }
+  }
+  
+  .typing-text { font-size:28px; font-weight:900; color: var(--gold); display:inline-block; white-space:pre; }
+  .typing-cursor {
+    display:inline-block; width:3px; background: var(--gold);
+    margin-left:2px; animation: blinkCursor 0.6s step-end infinite;
+  }
+  @keyframes blinkCursor { 50% { opacity:0; } }
+</style>
+</head>
+<body>
+
+<header>
+  <button class="back-btn" id="back-btn" style="display:none;">&#8592;</button>
+  <h1 id="page-title" data-i18n="smart_trading">Smart Trading</h1>
+  <div class="header-controls">
+    <button class="icon-btn" onclick="toggleTheme()" title="Toggle Theme">
+      <span id="theme-icon">🌙</span>
+    </button>
+    <select class="lang-select" id="langSelect" onchange="changeLanguage(this.value)">
+      <option value="en">EN</option>
+      <option value="bn">BN</option>
+      <option value="hi">HI</option>
+      <option value="zh">ZH</option>
+      <option value="es">ES</option>
+      <option value="ar">AR</option>
+      <option value="fr">FR</option>
+      <option value="pt">PT</option>
+      <option value="ru">RU</option>
+      <option value="ja">JA</option>
+    </select>
+  </div>
+</header>
+
+<div class="main-content">
+  <!-- Coin List View -->
+  <div id="coin-list-view">
+    <div class="welcome-loading">
+      <div class="candle-bg">
+        <div class="candle-bar up"></div><div class="candle-bar down"></div>
+        <div class="candle-bar up"></div><div class="candle-bar down"></div>
+        <div class="candle-bar up"></div><div class="candle-bar down"></div>
+        <div class="candle-bar up"></div><div class="candle-bar down"></div>
+        <div class="candle-bar up"></div><div class="candle-bar down"></div>
+      </div>
+      <span class="typing-text" id="welcome-text"></span><span class="typing-cursor">&nbsp;</span>
+    </div>
+  </div>
+
+  <!-- Chart View -->
+  <div id="chart-view">
+    <div class="chart-header">
+      <img id="chart-icon" src="" alt="">
+      <span class="pair-name" id="chart-pair"></span>
+      <select class="interval-select" id="interval-select">
+        <option value="1m">1min</option>
+        <option value="5m">5min</option>
+        <option value="15m" selected>15min</option>
+        <option value="1h">1hour</option>
+        <option value="4h">4hour</option>
+        <option value="1d">1day</option>
+      </select>
+    </div>
+    <div class="chart-card">
+      <div class="price-row">
+        <div class="big-price" id="live-price">-</div>
+        <div id="live-change">-</div>
+      </div>
+      <div class="chart-visual" id="chart-visual">
+        <div class="ohlc-grid">
+          <div>Open: <span class="val" id="ohlc-open">-</span></div>
+          <div>High: <span class="val" id="ohlc-high">-</span></div>
+          <div>Low: <span class="val" id="ohlc-low">-</span></div>
+          <div>Close: <span class="val" id="ohlc-close">-</span></div>
+        </div>
+        <!-- Lightweight Chart Container -->
+        <div id="chart-container"></div>
+        <div class="time-labels" id="time-labels"></div>
+      </div>
+
+      <div class="duration-row" id="duration-row"></div>
+
+      <div class="invest-section" id="invest-section">
+        <div class="amount-box">
+          <button class="amt-btn" id="amt-minus">&#8722;</button>
+          <input type="number" id="amount-input" placeholder="Investment amount">
+          <button class="amt-btn" id="amt-plus">+</button>
+        </div>
+        <div class="amount-range" id="amount-range">Amount range: -</div>
+        <div class="amount-error" id="amount-error"></div>
+
+        <div class="balance-display" id="balance-display">Est. Total Value: 0.00 USDT</div>
+
+        <div class="direction-row">
+          <button class="down-btn" id="down-btn">Down</button>
+          <button class="up-btn" id="up-btn">UP</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="bottom-nav">
+  <a href="market.html"><div><div class="ic">&#128200;</div><span data-i18n="market">Market</span></div></a>
+  <div class="active"><div class="ic">&#128179;</div><span data-i18n="trade">Trade</span></div>
+  <a href="assets.html"><div><div class="ic">&#128188;</div><span data-i18n="assets">Assets</span></div></a>
+  <a href="profile.html"><div><div class="ic">&#128100;</div><span data-i18n="profile">Profile</span></div></a>
+</div>
+
+<div class="tm-overlay" id="trade-modal-overlay">
+  <div class="tm-card">
+    <div class="tm-title" id="tm-title">ethusdt</div>
+    <div class="tm-timer-circle" id="tm-timer-circle"><span id="tm-timer-text">60s</span></div>
+    <div class="tm-result" id="tm-result"></div>
+    <div class="tm-rows">
+      <div class="tm-row"><span data-i18n="open_price">Open price</span><span id="tm-open">-</span></div>
+      <div class="tm-row"><span data-i18n="last_price">Last price:</span><span id="tm-last">-</span></div>
+      <div class="tm-row"><span id="tm-direction-label">Up:</span><span id="tm-amount">-</span></div>
+      <div class="tm-row"><span data-i18n="fee">Fee:</span><span id="tm-fee">-</span></div>
+      <div class="tm-row"><span data-i18n="expected_return">Expected return:</span><span id="tm-return">-</span></div>
+    </div>
+    <div class="tm-order-number" id="tm-order-number">Order number: -</div>
+    <button class="tm-again-btn" id="tm-again-btn" data-i18n="order_again">Order again</button>
+  </div>
+</div>
+
+<script src="lang-theme.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyDJoPr8RvE1xkNTKRr5kwTx6E51GCMn_HE",
+  authDomain: "abc-company-6272a.firebaseapp.com",
+  projectId: "abc-company-6272a",
+  storageBucket: "abc-company-6272a.firebasestorage.app",
+  messagingSenderId: "1026212780106",
+  appId: "1:1026212780106:web:985ec1bc35837d6320eeb3"
+};
+firebase.initializeApp(firebaseConfig);
+
+let currentUser = null;
+let currentBalance = 0;
+
+function getBalance() { return currentBalance; }
+
+function updateBalanceDisplay() {
+  const el = document.getElementById('balance-display');
+  if (el) el.textContent = `Est. Total Value: ${currentBalance.toFixed(2)} USDT`;
+}
+
+function setBalance(newVal) {
+  if (!currentUser) return;
+  firebase.firestore().collection('users').doc(currentUser.uid).update({
+    balance: newVal
+  }).catch(err => console.error('Balance update failed:', err));
+}
+
+firebase.auth().onAuthStateChanged(user => {
+  if (!user) {
+    window.location.href = 'login.html';
+    return;
+  }
+  currentUser = user;
+  firebase.firestore().collection('users').doc(user.uid)
+    .onSnapshot(doc => {
+      if (doc.exists) {
+        const data = doc.data();
+        currentBalance = data.balance || 0;
+        updateBalanceDisplay();
+      }
+    });
+});
+
+const coinList = [
+  { symbol: 'BTCUSDT', name: 'Bitcoin', short: 'BTC', icon: 'btc' },
+  { symbol: 'ETHUSDT', name: 'Ethereum', short: 'ETH', icon: 'eth' },
+  { symbol: 'BNBUSDT', name: 'BNB', short: 'BNB', icon: 'bnb' },
+  { symbol: 'SOLUSDT', name: 'Solana', short: 'SOL', icon: 'sol' },
+  { symbol: 'XRPUSDT', name: 'XRP', short: 'XRP', icon: 'xrp' },
+  { symbol: 'ADAUSDT', name: 'Cardano', short: 'ADA', icon: 'ada' },
+  { symbol: 'DOGEUSDT', name: 'Dogecoin', short: 'DOGE', icon: 'doge' },
+  { symbol: 'TRXUSDT', name: 'TRON', short: 'TRX', icon: 'trx' },
+  { symbol: 'TONUSDT', name: 'Toncoin', short: 'TON', icon: 'ton' },
+  { symbol: 'DOTUSDT', name: 'Polkadot', short: 'DOT', icon: 'dot' },
+  { symbol: 'POLUSDT', name: 'Polygon', short: 'POL', icon: 'matic' },
+  { symbol: 'LTCUSDT', name: 'Litecoin', short: 'LTC', icon: 'ltc' },
+  { symbol: 'SHIBUSDT', name: 'Shiba Inu', short: 'SHIB', icon: 'shib' },
+  { symbol: 'AVAXUSDT', name: 'Avalanche', short: 'AVAX', icon: 'avax' },
+  { symbol: 'LINKUSDT', name: 'Chainlink', short: 'LINK', icon: 'link' },
+  { symbol: 'ATOMUSDT', name: 'Cosmos', short: 'ATOM', icon: 'atom' },
+  { symbol: 'UNIUSDT', name: 'Uniswap', short: 'UNI', icon: 'uni' },
+  { symbol: 'XLMUSDT', name: 'Stellar', short: 'XLM', icon: 'xlm' },
+  { symbol: 'NEARUSDT', name: 'NEAR Protocol', short: 'NEAR', icon: 'near' },
+  { symbol: 'APTUSDT', name: 'Aptos', short: 'APT', icon: 'apt' },
+  { symbol: 'ARBUSDT', name: 'Arbitrum', short: 'ARB', icon: 'arb' },
+  { symbol: 'OPUSDT', name: 'Optimism', short: 'OP', icon: 'op' },
+  { symbol: 'FILUSDT', name: 'Filecoin', short: 'FIL', icon: 'fil' },
+  { symbol: 'ICPUSDT', name: 'Internet Computer', short: 'ICP', icon: 'icp' },
+  { symbol: 'BCHUSDT', name: 'Bitcoin Cash', short: 'BCH', icon: 'bch' },
+  { symbol: 'ALGOUSDT', name: 'Algorand', short: 'ALGO', icon: 'algo' },
+  { symbol: 'VETUSDT', name: 'VeChain', short: 'VET', icon: 'vet' },
+  { symbol: 'SANDUSDT', name: 'The Sandbox', short: 'SAND', icon: 'sand' },
+  { symbol: 'MANAUSDT', name: 'Decentraland', short: 'MANA', icon: 'mana' },
+  { symbol: 'HBARUSDT', name: 'Hedera', short: 'HBAR', icon: 'hbar' }
+];
+
+let durationList = [
+  { seconds: 60,  returnPct: 20.00, min: 100,    max: 9999,     step: 100   },
+  { seconds: 120, returnPct: 25.00, min: 10000,  max: 49999,    step: 1000  },
+  { seconds: 180, returnPct: 30.00, min: 50000,  max: 99999,    step: 1000  },
+  { seconds: 300, returnPct: 50.00, min: 100000, max: 5000000,  step: 10000 },
+  { seconds: 600, returnPct: 85.00, min: 100000, max: Infinity, step: 10000 }
+];
+
+const FEE_RATE = 0.002;
+let selectedDuration = null;
+
+async function loadTradeConfig() {
+  try {
+    const doc = await firebase.firestore().collection('settings').doc('tradeConfig').get();
+    if (doc.exists && Array.isArray(doc.data().durations) && doc.data().durations.length) {
+      durationList = doc.data().durations.map(d => ({
+        seconds: d.seconds, returnPct: d.returnPct, min: d.min,
+        max: (d.max === null || d.max === undefined) ? Infinity : d.max,
+        step: d.step
+      }));
+    } else {
+      const seedData = durationList.map(d => ({ ...d, max: d.max === Infinity ? null : d.max }));
+      await firebase.firestore().collection('settings').doc('tradeConfig').set({ durations: seedData });
+    }
+  } catch (e) {
+    console.error('Failed to load trade config, using defaults:', e);
+  }
+}
+
+function renderDurationBoxes() {
+  const row = document.getElementById('duration-row');
+  row.innerHTML = '';
+  durationList.forEach(d => {
+    const box = document.createElement('div');
+    box.className = 'duration-box';
+    box.innerHTML = `<div class="duration-time">${d.seconds}s</div><div class="duration-return">${d.returnPct.toFixed(2)}% return</div>`;
+    box.addEventListener('click', () => {
+      document.querySelectorAll('.duration-box').forEach(b => b.classList.remove('selected'));
+      box.classList.add('selected');
+      selectedDuration = d;
+      showInvestSection(d);
+    });
+    row.appendChild(box);
+  });
+}
+
+function showInvestSection(d) {
+  const section = document.getElementById('invest-section');
+  const rangeText = document.getElementById('amount-range');
+  const input = document.getElementById('amount-input');
+  const errorEl = document.getElementById('amount-error');
+
+  document.getElementById('chart-visual').classList.add('collapsed');
+  section.classList.add('show');
+  errorEl.textContent = '';
+  input.value = '';
+  input.placeholder = 'Investment amount';
+  updateBalanceDisplay();
+
+  if (d.max === Infinity) {
+    rangeText.textContent = `Amount range: ${d.min.toLocaleString()}+ (no upper limit)`;
+  } else {
+    rangeText.textContent = `Amount range: ${d.min.toLocaleString()} - ${d.max.toLocaleString()}`;
+  }
+}
+
+document.getElementById('amt-minus').addEventListener('click', () => adjustAmount(-1));
+document.getElementById('amt-plus').addEventListener('click', () => adjustAmount(1));
+
+function adjustAmount(dir) {
+  if (!selectedDuration) return;
+  const input = document.getElementById('amount-input');
+  let current = parseFloat(input.value);
+  if (isNaN(current)) current = selectedDuration.min;
+  current += dir * selectedDuration.step;
+  if (current < selectedDuration.min) current = selectedDuration.min;
+  if (selectedDuration.max !== Infinity && current > selectedDuration.max) current = selectedDuration.max;
+  input.value = current;
+}
+
+function validateAmount() {
+  const errorEl = document.getElementById('amount-error');
+  errorEl.textContent = '';
+  if (!selectedDuration) {
+    errorEl.textContent = 'Please select a duration first.';
+    return null;
+  }
+  const input = document.getElementById('amount-input');
+  const val = parseFloat(input.value);
+  if (isNaN(val) || val <= 0) {
+    errorEl.textContent = 'Please enter a number.';
+    return null;
+  }
+  if (val < selectedDuration.min || (selectedDuration.max !== Infinity && val > selectedDuration.max)) {
+    errorEl.textContent = `Amount must be between ${selectedDuration.min.toLocaleString()}${selectedDuration.max !== Infinity ? ' and ' + selectedDuration.max.toLocaleString() : '+'}.`;
+    return null;
+  }
+  if (val > getBalance()) {
+    errorEl.textContent = 'Insufficient balance.';
+    return null;
+  }
+  return val;
+}
+
+const listView = document.getElementById('coin-list-view');
+const chartView = document.getElementById('chart-view');
+const backBtn = document.getElementById('back-btn');
+const pageTitle = document.getElementById('page-title');
+const intervalSelect = document.getElementById('interval-select');
+
+let currentSymbol = null;
+let refreshTimer = null;
+let priceRefreshTimer = null;
+let tradeInProgress = false;
+
+// Lightweight chart variables
+let chart = null;
+let candleSeries = null;
+let volumeSeries = null;
+
+function iconUrl(icon) {
+  return 'https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/128/color/' + icon + '.png';
+}
+
+async function loadCoinList() {
+  listView.innerHTML = `<div class="welcome-loading">
+    <div class="candle-bg">
+      <div class="candle-bar up"></div><div class="candle-bar down"></div>
+      <div class="candle-bar up"></div><div class="candle-bar down"></div>
+      <div class="candle-bar up"></div><div class="candle-bar down"></div>
+      <div class="candle-bar up"></div><div class="candle-bar down"></div>
+      <div class="candle-bar up"></div><div class="candle-bar down"></div>
+    </div>
+    <span class="typing-text">Welcome Smart Trading</span>
+  </div>`;
+  try {
+    const minDelay = new Promise(resolve => setTimeout(resolve, 2000));
+    const symbolsParam = encodeURIComponent(JSON.stringify(coinList.map(c => c.symbol)));
+    const fetchData = fetch('https://api.binance.com/api/v3/ticker/24hr?symbols=' + symbolsParam)
+      .then(res => res.json());
+    const [tickers] = await Promise.all([fetchData, minDelay]);
+    listView.innerHTML = '';
+
+    coinList.forEach(coin => {
+      const t = tickers.find(x => x.symbol === coin.symbol);
+      if (!t) return;
+      const changePercent = parseFloat(t.priceChangePercent);
+      const up = changePercent >= 0;
+      const price = parseFloat(t.lastPrice);
+
+      const row = document.createElement('div');
+      row.className = 'coin-row';
+      row.innerHTML = `
+        <div class="coin-left">
+          <img src="${iconUrl(coin.icon)}" onerror="this.style.visibility='hidden'">
+          <div>
+            <div class="coin-name">${coin.short}/USDT</div>
+            <div class="coin-sub">${coin.name}</div>
+          </div>
+        </div>
+        <div class="coin-right">
+          <div class="coin-price" id="price-${coin.symbol}">$${price.toLocaleString(undefined,{maximumFractionDigits:4})}</div>
+          <div class="${up?'change-up':'change-down'}" id="change-${coin.symbol}">${up?'+':''}${changePercent.toFixed(2)}%</div>
+        </div>`;
+      row.addEventListener('click', () => openChart(coin));
+      listView.appendChild(row);
+    });
+
+    clearInterval(priceRefreshTimer);
+    priceRefreshTimer = setInterval(refreshCoinPrices, 2000);
+  } catch (err) {
+    listView.innerHTML = '<p style="text-align:center;color:var(--red);padding:20px;">Could not load coin list.</p>';
+  }
+}
+
+async function refreshCoinPrices() {
+  if (listView.style.display === 'none') return;
+  try {
+    const symbolsParam = encodeURIComponent(JSON.stringify(coinList.map(c => c.symbol)));
+    const res = await fetch('https://api.binance.com/api/v3/ticker/24hr?symbols=' + symbolsParam);
+    const tickers = await res.json();
+
+    coinList.forEach(coin => {
+      const t = tickers.find(x => x.symbol === coin.symbol);
+      if (!t) return;
+      const priceEl = document.getElementById('price-' + coin.symbol);
+      const changeEl = document.getElementById('change-' + coin.symbol);
+      if (!priceEl || !changeEl) return;
+
+      const changePercent = parseFloat(t.priceChangePercent);
+      const up = changePercent >= 0;
+      const price = parseFloat(t.lastPrice);
+
+      priceEl.textContent = '$' + price.toLocaleString(undefined,{maximumFractionDigits:4});
+      changeEl.textContent = (up?'+':'') + changePercent.toFixed(2) + '%';
+      changeEl.className = up ? 'change-up' : 'change-down';
+    });
+  } catch (err) {}
+}
+
+function createChart() {
+  const container = document.getElementById('chart-container');
+  container.innerHTML = '';
+
+  chart = LightweightCharts.createChart(container, {
+    width: container.clientWidth,
+    height: container.clientHeight,
+    layout: {
+      background: { color: 'transparent' },
+      textColor: '#848e9c',
+    },
+    grid: {
+      vertLines: { color: 'rgba(42, 46, 57, 0.3)' },
+      horzLines: { color: 'rgba(42, 46, 57, 0.3)' },
+    },
+    crosshair: {
+      mode: LightweightCharts.CrosshairMode.Normal,
+    },
+    rightPriceScale: {
+      borderColor: '#2b3139',
+    },
+    timeScale: {
+      borderColor: '#2b3139',
+      timeVisible: true,
+      secondsVisible: false,
+    },
+    handleScroll: {
+      mouseWheel: true,
+      pressedMouseMove: true,
+      horzTouchDrag: true,
+      vertTouchDrag: false,
+    },
+    handleScale: {
+      axisPressedMouseMove: true,
+      mouseWheel: true,
+      pinch: true,
+    },
+  });
+
+  candleSeries = chart.addCandlestickSeries({
+    upColor: '#0ecb81',
+    downColor: '#f6465d',
+    borderDownColor: '#f6465d',
+    borderUpColor: '#0ecb81',
+    wickDownColor: '#f6465d',
+    wickUpColor: '#0ecb81',
+  });
+
+  volumeSeries = chart.addHistogramSeries({
+    color: '#26a69a',
+    priceFormat: {
+      type: 'volume',
+    },
+    priceScaleId: '',
+    scaleMargins: {
+      top: 0.8,
+      bottom: 0,
+    },
+  });
+
+  const resizeObserver = new ResizeObserver(entries => {
+    for (let entry of entries) {
+      chart.applyOptions({ width: entry.contentRect.width });
+    }
+  });
+  resizeObserver.observe(container);
+}
+
+function openChart(coin) {
+  currentSymbol = coin;
+  listView.style.display = 'none';
+  chartView.style.display = 'block';
+  backBtn.style.display = 'block';
+  pageTitle.textContent = coin.short + '/USDT';
+  document.getElementById('chart-icon').src = iconUrl(coin.icon);
+  document.getElementById('chart-pair').textContent = coin.short + '/USDT';
+
+  renderDurationBoxes();
+  document.getElementById('invest-section').classList.remove('show');
+  document.getElementById('chart-visual').classList.remove('collapsed');
+  selectedDuration = null;
+
+  if (!chart) {
+    createChart();
+  }
+
+  loadChart();
+  clearInterval(refreshTimer);
+  // ★★★ এখানে ১০০০ মিলিসেকেন্ড (১ সেকেন্ড) করা হয়েছে ★★★
+  refreshTimer = setInterval(loadChart, 1000); 
+}
+
+backBtn.addEventListener('click', () => {
+  clearInterval(refreshTimer);
+  chartView.style.display = 'none';
+  listView.style.display = 'block';
+  backBtn.style.display = 'none';
+  pageTitle.textContent = translations[localStorage.getItem('appLang') || 'en']['smart_trading'] || 'Smart Trading';
+});
+
+intervalSelect.addEventListener('change', () => {
+  if (currentSymbol) {
+    if (chart) {
+      chart.remove();
+      chart = null;
+      candleSeries = null;
+      volumeSeries = null;
+    }
+    createChart();
+    loadChart();
+  }
+});
+
+async function loadChart() {
+  if (!currentSymbol || !chart || !candleSeries) return;
+  try {
+    const interval = intervalSelect.value;
+    const res = await fetch(`https://api.binance.com/api/v3/klines?symbol=${currentSymbol.symbol}&interval=${interval}&limit=100`);
+    const klines = await res.json();
+    if (!klines || klines.length === 0) return;
+
+    try {
+      const priceRes = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${currentSymbol.symbol}`);
+      const priceData = await priceRes.json();
+      const livePrice = parseFloat(priceData.price);
+      if (!isNaN(livePrice)) {
+        const last = klines[klines.length - 1];
+        last[4] = String(livePrice);
+        if (livePrice > parseFloat(last[2])) last[2] = String(livePrice);
+        if (livePrice < parseFloat(last[3])) last[3] = String(livePrice);
+      }
+    } catch (e) {}
+
+    const candleData = klines.map(k => ({
+      time: Math.floor(k[0] / 1000),
+      open: parseFloat(k[1]),
+      high: parseFloat(k[2]),
+      low: parseFloat(k[3]),
+      close: parseFloat(k[4]),
+    }));
+
+    const volumeData = klines.map(k => ({
+      time: Math.floor(k[0] / 1000),
+      value: parseFloat(k[5]),
+      color: parseFloat(k[4]) >= parseFloat(k[1]) ? 'rgba(14, 203, 129, 0.5)' : 'rgba(246, 70, 93, 0.5)',
+    }));
+
+    candleSeries.setData(candleData);
+    volumeSeries.setData(volumeData);
+
+    const last = klines[klines.length - 1];
+    const first = klines[0];
+    const openVal = parseFloat(last[1]);
+    const highVal = parseFloat(last[2]);
+    const lowVal = parseFloat(last[3]);
+    const closeVal = parseFloat(last[4]);
+    const prevClose = parseFloat(klines[klines.length - 2] ? klines[klines.length - 2][4] : first[1]);
+    const changePercent = ((closeVal - prevClose) / prevClose) * 100;
+    const up = changePercent >= 0;
+
+    document.getElementById('live-price').textContent = closeVal.toLocaleString(undefined,{maximumFractionDigits:4}) + ' USD';
+    const changeEl = document.getElementById('live-change');
+    changeEl.textContent = (up?'+':'') + changePercent.toFixed(2) + '%';
+    changeEl.className = up ? 'change-up' : 'change-down';
+    document.getElementById('ohlc-open').textContent = openVal.toLocaleString(undefined,{maximumFractionDigits:2});
+    document.getElementById('ohlc-high').textContent = highVal.toLocaleString(undefined,{maximumFractionDigits:2});
+    document.getElementById('ohlc-low').textContent = lowVal.toLocaleString(undefined,{maximumFractionDigits:2});
+    document.getElementById('ohlc-close').textContent = closeVal.toLocaleString(undefined,{maximumFractionDigits:2});
+
+    const startTime = new Date(first[0]);
+    const endTime = new Date(last[0]);
+    document.getElementById('time-labels').innerHTML =
+      `<span>${startTime.toLocaleString()}</span><span>${endTime.toLocaleString()}</span>`;
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+const tmOverlay = document.getElementById('trade-modal-overlay');
+const tmTitle = document.getElementById('tm-title');
+const tmTimerCircle = document.getElementById('tm-timer-circle');
+const tmTimerText = document.getElementById('tm-timer-text');
+const tmResult = document.getElementById('tm-result');
+const tmOpen = document.getElementById('tm-open');
+const tmLast = document.getElementById('tm-last');
+const tmDirectionLabel = document.getElementById('tm-direction-label');
+const tmAmount = document.getElementById('tm-amount');
+const tmFee = document.getElementById('tm-fee');
+const tmReturn = document.getElementById('tm-return');
+const tmOrderNumber = document.getElementById('tm-order-number');
+const tmAgainBtn = document.getElementById('tm-again-btn');
+
+function generateOrderNumber() {
+  const now = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  const datePart = `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+  const rand = Math.floor(10000 + Math.random() * 90000);
+  return `O${datePart}${rand}`;
+}
+
+function openTradeModal() { tmOverlay.classList.add('active'); }
+function closeTradeModal() { tmOverlay.classList.remove('active'); }
+
+tmAgainBtn.addEventListener('click', () => {
+  closeTradeModal();
+  document.getElementById('invest-section').classList.remove('show');
+  document.getElementById('chart-visual').classList.remove('collapsed');
+  selectedDuration = null;
+  document.querySelectorAll('.duration-box').forEach(b => b.classList.remove('selected'));
+});
+
+async function fetchLivePrice(symbol) {
+  const res = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${symbol}`);
+  const data = await res.json();
+  return parseFloat(data.price);
+}
+
+async function placeTrade(direction) {
+  if (tradeInProgress) return;
+  const amount = validateAmount();
+  if (amount === null) return;
+
+  const upBtn = document.getElementById('up-btn');
+  const downBtn = document.getElementById('down-btn');
+  const amountInput = document.getElementById('amount-input');
+  const duration = selectedDuration;
+
+  tradeInProgress = true;
+  upBtn.disabled = true;
+  downBtn.disabled = true;
+  amountInput.disabled = true;
+
+  const balanceAfterStake = getBalance() - amount;
+  setBalance(balanceAfterStake);
+
+  let entryPrice;
+  try {
+    entryPrice = await fetchLivePrice(currentSymbol.symbol);
+  } catch (err) {
+    setBalance(balanceAfterStake + amount);
+    resetTradeButtons();
+    alert('Failed to fetch price, trade cancelled.');
+    return;
+  }
+
+  const fee = amount * FEE_RATE;
+  const expectedReturn = amount * (duration.returnPct / 100);
+  const orderNumber = generateOrderNumber();
+
+  let tradeDocRef = null;
+  try {
+    tradeDocRef = await firebase.firestore().collection('trades').add({
+      uid: currentUser.uid,
+      userEmail: currentUser.email || '',
+      symbol: currentSymbol.symbol,
+      direction: direction,
+      amount: amount,
+      entryPrice: entryPrice,
+      fee: fee,
+      expectedReturn: expectedReturn,
+      durationSeconds: duration.seconds,
+      orderNumber: orderNumber,
+      status: 'pending',
+      forcedResult: null,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  } catch (e) {
+    console.error('Failed to save trade record:', e);
+  }
+
+  tmTitle.textContent = currentSymbol.symbol.toLowerCase();
+  tmTimerCircle.style.display = 'flex';
+  tmResult.style.display = 'none';
+  tmOpen.textContent = entryPrice.toFixed(2) + ' USD';
+  tmLast.textContent = entryPrice.toFixed(2) + ' USD';
+  tmDirectionLabel.textContent = direction === 'up' ? 'Up:' : 'Down:';
+  tmAmount.textContent = amount.toFixed(0) + ' USD';
+  tmFee.textContent = fee.toFixed(2) + ' USD';
+  tmReturn.textContent = expectedReturn.toFixed(2) + 'USD';
+  tmOrderNumber.textContent = 'Order number: ' + orderNumber;
+  tmAgainBtn.style.display = 'none';
+  openTradeModal();
+
+  let remaining = duration.seconds;
+  tmTimerText.textContent = remaining + 's';
+
+  const countdownTimer = setInterval(async () => {
+    remaining -= 1;
+    if (remaining >= 0) {
+      tmTimerText.textContent = remaining + 's';
+    }
+    if (remaining > 0 && remaining % 2 === 0) {
+      try {
+        const p = await fetchLivePrice(currentSymbol.symbol);
+        tmLast.textContent = p.toFixed(2) + ' USD';
+      } catch (e) {}
+    }
+  }, 1000);
+
+  setTimeout(async () => {
+    clearInterval(countdownTimer);
+    let exitPrice;
+    try {
+      exitPrice = await fetchLivePrice(currentSymbol.symbol);
+    } catch (err) {
+      setBalance(balanceAfterStake + amount);
+      if (tradeDocRef) {
+        tradeDocRef.update({ status: 'error', result: 'refunded' }).catch(()=>{});
+      }
+      tmTimerCircle.style.display = 'none';
+      tmResult.style.display = 'block';
+      tmResult.style.color = 'var(--red)';
+      tmResult.textContent = 'Error';
+      tmAgainBtn.style.display = 'block';
+      resetTradeButtons();
+      return;
+    }
+
+    let forcedResult = null;
+    if (tradeDocRef) {
+      try {
+        const snap = await tradeDocRef.get();
+        if (snap.exists) forcedResult = snap.data().forcedResult || null;
+      } catch (e) {}
+    }
+
+    let winRatePercent = null;
+    try {
+      const userSnap = await firebase.firestore().collection('users').doc(currentUser.uid).get();
+      if (userSnap.exists && typeof userSnap.data().winRatePercent === 'number') {
+        winRatePercent = userSnap.data().winRatePercent;
+      }
+    } catch (e) {}
+
+    const wentUp = exitPrice > entryPrice;
+    const wentDown = exitPrice < entryPrice;
+    let won, tie;
+    if (forcedResult === 'win') {
+      won = true; tie = false;
+    } else if (forcedResult === 'lose') {
+      won = false; tie = false;
+    } else if (winRatePercent !== null) {
+      won = (Math.random() * 100) < winRatePercent;
+      tie = false;
+    } else {
+      won = (direction === 'up' && wentUp) || (direction === 'down' && wentDown);
+      tie = exitPrice === entryPrice;
+    }
+
+    tmLast.textContent = exitPrice.toFixed(2) + ' USD';
+    tmTimerCircle.style.display = 'none';
+    tmResult.style.display = 'block';
+
+    let resultLabel;
+    if (tie) {
+      setBalance(balanceAfterStake + amount);
+      tmResult.style.color = 'var(--gold)';
+      tmResult.textContent = '±0 USD';
+      resultLabel = 'tie';
+    } else if (won) {
+      const profit = expectedReturn;
+      const payout = amount + profit;
+      setBalance(balanceAfterStake + payout);
+      tmResult.style.color = 'var(--green)';
+      tmResult.textContent = '+' + profit.toFixed(0) + ' USD';
+      resultLabel = 'win';
+    } else {
+      tmResult.style.color = 'var(--red)';
+      tmResult.textContent = '-' + amount.toFixed(0) + ' USD';
+      resultLabel = 'lose';
+    }
+
+    if (tradeDocRef) {
+      tradeDocRef.update({
+        exitPrice: exitPrice,
+        status: 'completed',
+        result: resultLabel,
+        resolvedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).catch(e => console.error('Failed to update trade record:', e));
+    }
+
+    tmAgainBtn.style.display = 'block';
+    resetTradeButtons();
+  }, duration.seconds * 1000);
+}
+
+function resetTradeButtons() {
+  tradeInProgress = false;
+  document.getElementById('up-btn').disabled = false;
+  document.getElementById('down-btn').disabled = false;
+  document.getElementById('amount-input').disabled = false;
+}
+
+document.getElementById('up-btn').addEventListener('click', () => placeTrade('up'));
+document.getElementById('down-btn').addEventListener('click', () => placeTrade('down'));
+
+loadCoinList();
+loadTradeConfig();
+</script>
+</body>
+</html>

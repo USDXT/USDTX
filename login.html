@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Log In - ABC Company</title>
+<style>
+  /* ★★★ ডার্ক ও লাইট মোডের জন্য CSS ভেরিয়েবল ★★★ */
+  :root {
+    --bg-color: #0b0e11;
+    --panel-color: #161a1e;
+    --panel-hover: #1e2329;
+    --text-color: #eaecef;
+    --text-dim: #848e9c;
+    --border-color: #474d57;
+    --gold: #f0b90b;
+    --btn-text: #202630;
+    --red: #f6465d;
+  }
+
+  [data-theme="light"] {
+    --bg-color: #ffffff;
+    --panel-color: #f5f5f5;
+    --panel-hover: #e8e8e8;
+    --text-color: #1a1a1a;
+    --text-dim: #666666;
+    --border-color: #cccccc;
+    --gold: #d9a70a;
+    --btn-text: #ffffff;
+    --red: #d9304a;
+  }
+
+  * { box-sizing: border-box; }
+  
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    width: 100%;
+    background: var(--bg-color);
+    font-family: Arial, sans-serif;
+    color: var(--text-color);
+    /* মোবাইলে স্ক্রিন ডানে-বামে সরানো বন্ধ করতে */
+    overflow: hidden; 
+    overscroll-behavior: none;
+    -webkit-text-size-adjust: 100%;
+    touch-action: pan-y;
+    position: fixed;
+    inset: 0;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  #app-container {
+    height: 100vh;
+    height: 100dvh; 
+    height: calc(var(--app-height, 100vh));
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    /* iPhone এর সেফ এরিয়া (নচ) মেইনটেইন করতে */
+    padding-top: calc(20px + env(safe-area-inset-top));
+    padding-bottom: calc(20px + env(safe-area-inset-bottom));
+    padding-left: calc(20px + env(safe-area-inset-left));
+    padding-right: calc(20px + env(safe-area-inset-right));
+    overflow-y: auto; 
+  }
+
+  .box { 
+    background: var(--panel-color); 
+    padding:35px 25px; 
+    border-radius:12px; 
+    width:340px; 
+    max-width:100%; 
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    margin: auto;
+    position: relative;
+  }
+  .box h2 { margin-top:0; text-align:center; margin-bottom: 20px; }
+
+  /* Theme & Lang Buttons */
+  .box-header-controls {
+    position: absolute; top: 15px; right: 15px;
+    display: flex; gap: 6px; align-items: center;
+  }
+  .icon-btn, .lang-select {
+    background: transparent; border: 1px solid var(--border-color);
+    color: var(--text-color); border-radius: 6px; padding: 2px 5px;
+    cursor: pointer; font-size: 11px; outline: none;
+  }
+  .lang-select option { background: var(--panel-color); color: var(--text-color); }
+  
+  /* Logo Rotator */
+  .logo-container {
+    width: 70px; height: 70px;
+    margin: 0 auto 20px;
+    border-radius: 50%;
+    background: #fff; 
+    display: flex; align-items: center; justify-content: center;
+    border: 2px solid var(--gold);
+    overflow: hidden;
+  }
+  .logo-container img { width: 100%; height: 100%; object-fit: contain; transition: opacity 0.3s ease; }
+  
+  .input-group { position: relative; margin: 12px 0; }
+  
+  .input-group input { 
+    width:100%; 
+    padding:12px; 
+    padding-right: 40px; 
+    border-radius:6px; 
+    border:1px solid var(--border-color); 
+    background: var(--bg-color); 
+    color: var(--text-color); 
+    font-size:16px; /* iOS-এ জুম আটকাতে ১৬px */
+    margin: 0; 
+    outline: none;
+  }
+  .input-group input:focus { border-color: var(--gold); }
+  
+  /* Eye Icon */
+  .eye-icon {
+    position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+    cursor: pointer; color: var(--text-dim); font-size: 18px; user-select: none;
+  }
+  
+  /* Captcha Section */
+  .captcha-row { display: flex; gap: 10px; align-items: center; margin: 12px 0; }
+  .captcha-canvas {
+    background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 6px;
+    padding: 10px 15px; font-weight: bold; font-size: 18px; letter-spacing: 3px;
+    color: var(--gold); user-select: none; flex-shrink: 0; cursor: pointer;
+    font-family: 'Courier New', Courier, monospace;
+  }
+  .captcha-row input { 
+    width: 100%; padding:12px; border-radius:6px; border:1px solid var(--border-color); 
+    background: var(--bg-color); color: var(--text-color); font-size:16px; margin: 0; outline: none;
+  }
+  .captcha-row input:focus { border-color: var(--gold); }
+
+  .box button { 
+    width:100%; padding:12px; margin-top:10px; border:none; border-radius:6px; 
+    background: var(--gold); color: var(--btn-text); font-weight:bold; cursor:pointer; font-size:16px;
+  }
+  .box button:active { opacity: 0.9; }
+  
+  .msg { text-align:center; margin-top:10px; font-size:14px; min-height: 20px; }
+  a { color: var(--gold); text-decoration: none; }
+  
+  .forgot-pass {
+    display: block; text-align: center; margin-top: 15px; font-size: 13px; color: var(--text-dim);
+    cursor: pointer;
+  }
+  .forgot-pass:hover { color: var(--gold); }
+
+  #loading-overlay { position:fixed; inset:0; background: var(--bg-color); display:flex; align-items:center; justify-content:center; z-index:9999; }
+  .spinner { width:40px; height:40px; border:4px solid var(--border-color); border-top:4px solid var(--gold); border-radius:50%; animation:spin 1s linear infinite; }
+  @keyframes spin { 100% { transform:rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div id="loading-overlay"><div class="spinner"></div></div>
+
+<div id="app-container">
+  <div class="box" style="display:none;" id="login-box">
+    
+    <!-- থিম ও ভাষা বাটন -->
+    <div class="box-header-controls">
+      <button class="icon-btn" onclick="toggleTheme()" title="Toggle Theme">
+        <span id="theme-icon">🌙</span>
+      </button>
+      <select class="lang-select" id="langSelect" onchange="changeLanguage(this.value)">
+        <option value="en">EN</option>
+        <option value="bn">BN</option>
+        <option value="hi">HI</option>
+        <option value="zh">ZH</option>
+        <option value="es">ES</option>
+        <option value="ar">AR</option>
+        <option value="fr">FR</option>
+        <option value="pt">PT</option>
+        <option value="ru">RU</option>
+        <option value="ja">JA</option>
+      </select>
+    </div>
+
+    <!-- Logo Rotator -->
+    <div class="logo-container">
+      <img id="dynamicLogo" src="tradewallet.png" alt="Logo">
+    </div>
+
+    <h2 data-i18n="login">Log In</h2>
+    
+    <div class="input-group">
+      <input type="text" id="phone" placeholder="Email or Phone number" data-i18n="email_phone" autocomplete="off">
+    </div>
+    
+    <div class="input-group">
+      <input type="password" id="password" placeholder="Password" data-i18n="password">
+      <span class="eye-icon" id="togglePassword">👁️</span>
+    </div>
+
+    <!-- Captcha -->
+    <div class="captcha-row">
+      <div class="captcha-canvas" id="captchaCanvas"></div>
+      <input type="text" id="captchaInput" placeholder="Enter code" autocomplete="off">
+    </div>
+
+    <button onclick="logIn()" data-i18n="login">Log In</button>
+    
+    <p class="msg" id="msg"></p>
+    <p class="msg"><span data-i18n="no_account">Don't have an account?</span> <a href="signup.html" data-i18n="signup">Sign Up</a></p>
+    
+    <a href="live-support.html" class="forgot-pass" data-i18n="forgot_pass">Forgot Password? Contact Support</a>
+  </div>
+</div>
+
+<!-- ★★★ lang-theme.js যুক্ত করা হলো ★★★ -->
+<script src="lang-theme.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script>
+// মোবাইলের আসল উচ্চতা ঠিক রাখার জন্য
+function setAppHeight(){
+  const h = (window.visualViewport ? window.visualViewport.height : window.innerHeight);
+  document.documentElement.style.setProperty('--app-height', h + 'px');
+  window.scrollTo(0, 0);
+}
+setAppHeight();
+window.addEventListener('resize', setAppHeight);
+if (window.visualViewport){
+  window.visualViewport.addEventListener('resize', setAppHeight);
+  window.visualViewport.addEventListener('scroll', setAppHeight);
+}
+
+const ADMIN_EMAIL = "mrtiger6662@gmail.com";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDJoPr8RvE1xkNTKRr5kwTx6E51GCMn_HE",
+  authDomain: "abc-company-6272a.firebaseapp.com",
+  projectId: "abc-company-6272a",
+  storageBucket: "abc-company-6272a.firebasestorage.app",
+  messagingSenderId: "1026212780106",
+  appId: "1:1026212780106:web:985ec1bc35837d6320eeb3"
+};
+firebase.initializeApp(firebaseConfig);
+
+// ==================== লোগো রোটেশন (প্রতি ৩ সেকেন্ড) ====================
+const logos = [
+  'tradewallet.png', 
+  'https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/128/color/btc.png',
+  'https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/128/color/eth.png'
+];
+let currentLogoIndex = 0;
+const logoImg = document.getElementById('dynamicLogo');
+
+setInterval(() => {
+  currentLogoIndex = (currentLogoIndex + 1) % logos.length;
+  logoImg.style.opacity = 0;
+  setTimeout(() => {
+    logoImg.src = logos[currentLogoIndex];
+    logoImg.style.opacity = 1;
+  }, 300);
+}, 3000); 
+
+// ==================== পাসওয়ার্ড চোখ ====================
+const togglePassword = document.getElementById('togglePassword');
+const passwordInput = document.getElementById('password');
+
+togglePassword.addEventListener('click', () => {
+  const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+  passwordInput.setAttribute('type', type);
+  togglePassword.textContent = type === 'password' ? '👁️' : '🙈';
+});
+
+// ==================== সহজ ক্যাপচা ====================
+let currentCaptcha = '';
+const captchaCanvas = document.getElementById('captchaCanvas');
+
+function generateCaptcha() {
+  currentCaptcha = Math.floor(10000 + Math.random() * 90000).toString();
+  captchaCanvas.textContent = currentCaptcha;
+}
+generateCaptcha(); 
+captchaCanvas.addEventListener('click', generateCaptcha); 
+
+// ==================== অথেনটিকেশন ====================
+async function setBestAvailablePersistence() {
+  try {
+    await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+  } catch (persistErr) {
+    try {
+      await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.SESSION);
+    } catch (sessionErr) {
+      await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.NONE);
+    }
+  }
+}
+
+setBestAvailablePersistence().then(() => {
+  firebase.auth().onAuthStateChanged((user) => {
+    const loadingOverlay = document.getElementById('loading-overlay');
+    const loginBox = document.getElementById('login-box');
+
+    if (user) {
+      const dest = (user.email || '').toLowerCase() === ADMIN_EMAIL.toLowerCase()
+        ? 'admin.html'
+        : 'market.html';
+      window.location.replace(dest);
+    } else {
+      loadingOverlay.style.display = 'none';
+      loginBox.style.display = 'block';
+    }
+  });
+});
+
+document.querySelectorAll('.box input').forEach(input => {
+  input.addEventListener('focus', () => {
+    setTimeout(() => {
+      input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 300);
+  });
+});
+
+function logIn() {
+  const identifier = document.getElementById('phone').value.trim();
+  const password = document.getElementById('password').value;
+  const captchaEntered = document.getElementById('captchaInput').value.trim();
+  const msg = document.getElementById('msg');
+  const lang = localStorage.getItem('appLang') || 'en';
+  
+  msg.style.color = 'var(--red)';
+
+  if (!identifier || !password || !captchaEntered) {
+    msg.textContent = translations[lang]['fill_all_fields'] || 'Please fill in all fields.';
+    return;
+  }
+
+  if (captchaEntered !== currentCaptcha) {
+    msg.textContent = translations[lang]['invalid_captcha'] || 'Invalid captcha code!';
+    generateCaptcha(); 
+    document.getElementById('captchaInput').value = '';
+    return;
+  }
+  
+  const email = identifier.includes('@') ? identifier : identifier.replace(/\D/g,'') + '@abccompany-users.com';
+  msg.style.color = 'var(--gold)';
+  msg.textContent = translations[lang]['logging_in'] || 'Logging in...';
+
+  setBestAvailablePersistence()
+    .then(() => firebase.auth().signInWithEmailAndPassword(email, password))
+    .then((cred) => {
+      const destination = (cred.user.email || '').toLowerCase() === ADMIN_EMAIL.toLowerCase()
+        ? 'admin.html'
+        : 'market.html';
+      window.location.replace(destination);
+    })
+    .catch(err => {
+      msg.style.color = 'var(--red)';
+      
+      if (err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
+        msg.textContent = translations[lang]['invalid_credentials'] || 'Invalid email/phone or password!';
+      } else {
+        msg.textContent = err.message;
+      }
+      
+      generateCaptcha();
+      document.getElementById('captchaInput').value = '';
+    });
+}
+</script>
+</body>
+</html>

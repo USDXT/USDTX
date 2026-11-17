@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Download App - Crypto World</title>
+
+<!-- ★★★ iPhone-এর জন্য অ্যাপের নাম ও লোগো সেট করা হলো ★★★ -->
+<meta name="apple-mobile-web-app-title" content="Crypto World">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" sizes="180x180" href="tradewallet.png">
+<!-- ======================================================== -->
+
+<style>
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; height: 100%; width: 100%;
+    background: #0b0e11; color: #eaecef;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden; position: fixed; inset: 0;
+  }
+  .container {
+    text-align: center;
+    padding: 30px;
+    background: #161a1e;
+    border-radius: 16px;
+    width: 90%; max-width: 360px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    max-height: 90vh; overflow-y: auto;
+  }
+  .logo {
+    width: 100px; height: 100px;
+    margin: 0 auto 20px;
+    border-radius: 22px;
+    background: #fff;
+    display: flex; align-items: center; justify-content: center;
+    border: 3px solid #f0b90b;
+    overflow: hidden;
+  }
+  .logo img { width: 100%; height: 100%; object-fit: contain; }
+  h1 { font-size: 24px; margin: 0 0 10px; color: #fff; }
+  p { font-size: 14px; color: #848e9c; margin-bottom: 30px; line-height: 1.5; }
+  
+  .btn {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    width: 100%; padding: 15px;
+    background: #f0b90b; color: #202630;
+    border: none; border-radius: 10px;
+    font-size: 16px; font-weight: bold;
+    cursor: pointer; transition: 0.2s;
+    margin-bottom: 15px;
+  }
+  .btn:active { transform: scale(0.97); background: #d9a70a; }
+  .btn-icon { font-size: 20px; }
+
+  .instruction-box {
+    display: none;
+    background: #1e2329;
+    border: 1px solid #474d57;
+    border-radius: 10px;
+    padding: 15px;
+    margin-top: 15px;
+    text-align: left;
+    font-size: 14px;
+    color: #eaecef;
+    line-height: 1.6;
+  }
+  .instruction-box.active { display: block; }
+  .instruction-box b { color: #f0b90b; font-size: 16px; }
+  
+  /* স্ক্রিনশটের স্টাইল */
+  .step { margin-bottom: 20px; }
+  .step-text { margin-bottom: 8px; }
+  .step-img { 
+    width: 100%; 
+    border-radius: 8px; 
+    border: 1px solid #333; 
+    display: block;
+    background: #000;
+    min-height: 100px;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="logo">
+    <img src="tradewallet.png" alt="Logo">
+  </div>
+  
+  <h1>Crypto World App</h1>
+  <p>Download our app for a faster, smoother, and safer trading experience.</p>
+
+  <button class="btn" id="downloadBtn" onclick="startDownload()">
+    <span class="btn-icon">⬇️</span> Download & Install App
+  </button>
+
+  <div class="instruction-box" id="instructionBox">
+    <!-- নির্দেশনা এখানে জাভাস্ক্রিপ্ট দিয়ে বসানো হবে -->
+  </div>
+</div>
+
+<script>
+  const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+  const isIOS = /iPad|iPhone|iPod/.test(userAgent) && !window.MSStream;
+  const isAndroid = /android/i.test(userAgent);
+
+  function startDownload() {
+    const btn = document.getElementById('downloadBtn');
+    const box = document.getElementById('instructionBox');
+    
+    btn.innerHTML = '⏳ Preparing...';
+    btn.style.opacity = '0.7';
+    btn.disabled = true;
+
+    setTimeout(() => {
+      btn.style.display = 'none';
+      box.classList.add('active');
+
+      if (isIOS) {
+        box.innerHTML = `
+          <b>📱 iPhone / iPad Instructions:</b><br><br>
+          
+          <div class="step">
+            <div class="step-text"><b>Step 1:</b> Tap the <b>Share</b> icon at the bottom of your Safari browser.</div>
+            <!-- এখানে Share বাটনের স্ক্রিনশট দিন -->
+            <img src="share.png" class="step-img" alt="Share Button" onerror="this.style.display='none'">
+          </div>
+
+          <div class="step">
+            <div class="step-text"><b>Step 2:</b> Scroll down and tap on <b>"Add to Home Screen"</b>.</div>
+            <!-- এখানে Add to Home Screen বাটনের স্ক্রিনশট দিন -->
+            <img src="add-to-home.png" class="step-img" alt="Add to Home Screen" onerror="this.style.display='none'">
+          </div>
+
+          <div class="step">
+            <div class="step-text"><b>Step 3:</b> Tap <b>"Add"</b> in the top right corner.</div>
+            <!-- এখানে Add বাটনের স্ক্রিনশট দিন -->
+            <img src="add.png" class="step-img" alt="Add Button" onerror="this.style.display='none'">
+          </div>
+          
+          <i>(It's not possible to auto-install directly from Safari.)</i>
+        `;
+      } else if (isAndroid) {
+        box.innerHTML = `
+          <b>🤖 Android Instructions:</b><br><br>
+          1. Tap the <b>3-Dot</b> (⋮) menu at the top right of Chrome.<br>
+          2. Tap <b>"Install app"</b> or <b>"Add to Home screen"</b>.<br>
+          3. Tap <b>"Install"</b> on the popup.<br><br>
+          <i>(The app will be added to your home screen)</i>
+        `;
+      } else {
+        box.innerHTML = `
+          <b>💻 Desktop Instructions:</b><br><br>
+          This is a mobile app. Please open this link on your mobile browser (Chrome/Safari).
+        `;
+      }
+    }, 1500);
+  }
+</script>
+
+</body>
+</html>

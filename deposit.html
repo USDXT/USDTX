@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Deposit - Crypto World</title>
+<style>
+  :root {
+    --bg-color: #0b0e11;
+    --panel-color: #161a1e;
+    --panel-hover: #1e2329;
+    --text-color: #eaecef;
+    --text-dim: #848e9c;
+    --border-color: #2b3139;
+    --gold: #f0b90b;
+    --btn-text: #202630;
+    --green: #0ecb81;
+    --red: #f6465d;
+  }
+
+  [data-theme="light"] {
+    --bg-color: #ffffff;
+    --panel-color: #f5f5f5;
+    --panel-hover: #e8e8e8;
+    --text-color: #1a1a1a;
+    --text-dim: #666666;
+    --border-color: #dcdcdc;
+    --gold: #d9a70a;
+    --btn-text: #ffffff;
+    --green: #0a9d62;
+    --red: #d9304a;
+  }
+
+  * { box-sizing:border-box; }
+  
+  html, body {
+    margin: 0; padding: 0; height: 100%; width: 100%;
+    background: var(--bg-color); color: var(--text-color);
+    font-family: Arial, sans-serif;
+    /* উপরে-নিচে স্ক্রল থাকবে, কিন্তু ডানে-বামে সরবে না */
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: none;
+    -webkit-text-size-adjust: 100%;
+    touch-action: pan-y;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  /* হেডার ফিক্সড থাকবে */
+  header { 
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    display:flex; align-items:center; gap:10px; 
+    padding: calc(12px + env(safe-area-inset-top)) 20px 12px; 
+    background: var(--bg-color);
+    border-bottom: 1px solid var(--border-color);
+    z-index: 1000;
+  }
+  header h1 { font-size:17px; margin:0; display: flex; align-items: center; gap: 6px; }
+  .back-btn { background:none; border:none; color: var(--text-color); font-size:20px; cursor:pointer; padding:0; }
+  .asset-icon-header { width:20px; height:20px; }
+
+  .header-controls {
+    position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
+    display: flex; gap: 8px; align-items: center;
+  }
+  .icon-btn, .lang-select {
+    background: transparent; border: 1px solid var(--border-color);
+    color: var(--text-color); border-radius: 6px; padding: 4px 6px;
+    cursor: pointer; font-size: 12px; outline: none;
+  }
+  .lang-select option { background: var(--panel-color); color: var(--text-color); }
+
+  /* মেইন কন্টেন্ট - হেডার ও বটম নেভের মাঝে */
+  .main-content {
+    padding-top: 80px; /* হেডারের উচ্চতা */
+    padding-bottom: 90px; /* বটম নেভের উচ্চতা */
+  }
+
+  .tabs { display:flex; gap:8px; padding:16px 16px 10px; overflow-x:auto; }
+  .tabs button {
+    background: var(--panel-hover); border:1px solid var(--border-color); color: var(--text-dim);
+    padding:6px 14px; border-radius:20px; white-space:nowrap; cursor:pointer; font-weight:bold; font-size:13px;
+  }
+  .tabs button.active { background: var(--gold); color: var(--btn-text); border-color: var(--gold); }
+  
+  .content { padding:0 16px; }
+  .network-label { color: var(--text-dim); font-size:12px; margin-bottom:6px; }
+  .address-box {
+    background: var(--panel-color); border:1px solid var(--border-color); border-radius:8px;
+    padding:9px 12px; font-size:12px; word-break:break-all; margin-bottom:8px;
+  }
+  .copy-btn {
+    width:100%; background: var(--panel-hover); border:1px solid var(--gold); color: var(--gold);
+    padding:9px; border-radius:8px; font-weight:bold; cursor:pointer; margin-bottom:12px; font-size:13px;
+  }
+  .copy-btn.copied { background: var(--gold); color: var(--btn-text); }
+  .qr-wrap { display:flex; justify-content:center; margin-bottom:12px; position:relative; }
+  .qr-wrap img { width:130px; height:130px; border-radius:8px; background:#fff; padding:6px; }
+  
+  .warning-box {
+    background: var(--panel-color); border-radius:8px; padding:10px 12px; color: var(--text-dim);
+    font-size:11px; line-height:1.4; margin-bottom:10px;
+  }
+  
+  .amount-label { font-size:13px; color: var(--text-dim); margin-bottom:5px; }
+  .amount-input {
+    width:100%; background: var(--panel-color); border:1px solid var(--border-color); color: var(--text-color);
+    padding:11px; border-radius:8px; font-size:16px; font-weight:bold; margin-bottom:6px; outline: none;
+  }
+  .amount-input::placeholder { color: var(--text-dim); font-weight:normal; }
+  .amount-error { text-align:center; font-size:12px; color: var(--red); margin-bottom:6px; min-height:14px; }
+  
+  .upload-btn {
+    width:100%; background: var(--gold); color: var(--btn-text); border:none;
+    padding:12px; border-radius:8px; font-weight:bold; font-size:14px; cursor:pointer;
+  }
+  .upload-btn:disabled { opacity:0.5; cursor:not-allowed; }
+
+  .upload-progress{
+    display:none;
+    position:absolute;
+    top:0; left:0; right:0; bottom:0;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:12px;
+    background:rgba(11,14,17,0.94);
+    border-radius:8px;
+    padding:12px;
+  }
+  [data-theme="light"] .upload-progress { background: rgba(255,255,255,0.94); }
+  .upload-progress.show{ display:flex; }
+  
+  .spinner-circle{
+    width:56px; height:56px; border-radius:50%;
+    border:4px solid var(--border-color);
+    border-top-color: var(--gold);
+    animation:spin 0.75s linear infinite;
+    display:flex; align-items:center; justify-content:center;
+    transition:border-color 0.2s;
+  }
+  .spinner-circle.complete{ animation:none; border-color: var(--green); }
+  .spinner-circle.error{ animation:none; border-color: var(--red); }
+  .spinner-circle .checkmark{
+    display:none; color: var(--green); font-size:26px; font-weight:bold; line-height:1;
+  }
+  .spinner-circle.complete .checkmark{ display:block; }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  
+  .progress-text{ font-size:14px; font-weight:bold; color: var(--text-color); text-align:center; }
+  .progress-text.complete{ color: var(--green); }
+  .progress-text.error{ color: var(--red); font-weight:normal; font-size:13px; }
+
+  .loading-state { text-align:center; padding:60px 20px; color: var(--text-dim); font-size:14px; }
+
+  /* বটম নেভ ফিক্সড */
+  .bottom-nav {
+    position:fixed; bottom:0; left:0; right:0; background: var(--panel-color);
+    display:flex; justify-content:space-around; 
+    padding: 10px 0 calc(10px + env(safe-area-inset-bottom)) 0;
+    border-top:1px solid var(--border-color);
+    z-index: 999;
+    transition: background 0.3s;
+  }
+  .bottom-nav a { text-decoration:none; }
+  .bottom-nav div { text-align:center; color: var(--text-dim); font-size:11px; cursor:pointer; }
+  .bottom-nav div.active { color: var(--gold); }
+  .bottom-nav .ic {
+    font-size:18px; width:38px; height:38px; line-height:38px;
+    margin:0 auto 2px; border-radius:50%; transition:0.2s;
+  }
+  .bottom-nav div.active .ic {
+    background:rgba(240,185,11,0.15);
+    box-shadow:0 0 0 6px rgba(240,185,11,0.08);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a href="profile.html" class="back-btn">&#8592;</a>
+  <h1><span data-i18n="deposit">Deposit</span> <img class="asset-icon-header" id="header-icon" src="" alt=""></h1>
+  <div class="header-controls">
+    <button class="icon-btn" onclick="toggleTheme()" title="Toggle Theme">
+      <span id="theme-icon">🌙</span>
+    </button>
+    <select class="lang-select" id="langSelect" onchange="changeLanguage(this.value)">
+      <option value="en">EN</option>
+      <option value="bn">BN</option>
+      <option value="hi">HI</option>
+      <option value="zh">ZH</option>
+      <option value="es">ES</option>
+      <option value="ar">AR</option>
+      <option value="fr">FR</option>
+      <option value="pt">PT</option>
+      <option value="ru">RU</option>
+      <option value="ja">JA</option>
+    </select>
+  </div>
+</header>
+
+<div class="main-content">
+  <div id="loading-section" class="loading-state">
+    Loading deposit options...
+  </div>
+
+  <div id="deposit-section" style="display:none;">
+    <div class="tabs" id="asset-tabs"></div>
+
+    <div class="content">
+      <div class="network-label" id="network-label">Network: -</div>
+      <div class="address-box" id="address-box">-</div>
+      <button class="copy-btn" id="copy-btn" data-i18n="copy_address">Copy address</button>
+
+      <div class="qr-wrap">
+        <img id="qr-img" src="" alt="QR code">
+        <div class="upload-progress" id="upload-progress">
+          <div class="spinner-circle" id="spinner-circle">
+            <span class="checkmark" id="checkmark">&#10003;</span>
+          </div>
+          <div class="progress-text" id="progress-text">Uploading...</div>
+        </div>
+      </div>
+
+      <div class="warning-box" data-i18n="deposit_warning">
+        Please do not send other types of assets to the above address. This action may result in the loss of your assets. After the transmission is successful, the network node needs to confirm receipt of the corresponding assets. After the transfer is successful, please contact online customer service for confirmation.
+      </div>
+
+      <div class="amount-label" id="amount-label">How much have you deposited?</div>
+      <input type="number" class="amount-input" id="amount-input" placeholder="Enter deposit amount">
+      <div class="amount-error" id="amount-error"></div>
+
+      <input type="file" id="proof-input" accept="image/*" style="display:none;">
+      <button class="upload-btn" id="upload-btn" data-i18n="upload_proof">Upload Proof</button>
+    </div>
+  </div>
+</div>
+
+<div class="bottom-nav">
+  <a href="market.html"><div><div class="ic">&#128200;</div><span data-i18n="market">Market</span></div></a>
+  <a href="trade.html"><div><div class="ic">&#128179;</div><span data-i18n="trade">Trade</span></div></a>
+  <a href="assets.html"><div><div class="ic">&#128188;</div><span data-i18n="assets">Assets</span></div></a>
+  <div class="active"><div class="ic">&#128100;</div><span data-i18n="profile">Profile</span></div>
+</div>
+
+<script src="lang-theme.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyDJoPr8RvE1xkNTKRr5kwTx6E51GCMn_HE",
+  authDomain: "abc-company-6272a.firebaseapp.com",
+  projectId: "abc-company-6272a",
+  storageBucket: "abc-company-6272a.firebasestorage.app",
+  messagingSenderId: "1026212780106",
+  appId: "1:1026212780106:web:985ec1bc35837d6320eeb3"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+const IMGBB_API_KEY = '0dae5f846c7bc79071442d3c548697fc';
+
+let currentUser = null;
+firebase.auth().onAuthStateChanged(user => {
+  if (!user) { window.location.href = 'login.html'; return; }
+  currentUser = user;
+});
+
+const DEFAULT_COINS = [
+  { symbol: 'USDT', name: 'Tether', icon: 'usdt', network: 'Ethereum (ERC20)', address: '0xAf26e02916bfbc0E49CE82A253988058259fe71E', qrUrl: '' },
+  { symbol: 'BTC', name: 'Bitcoin', icon: 'btc', network: 'Bitcoin (BTC)', address: 'bc1q8sfwmlkqfpmeuu2elnpet95wahpg9f96vqr6x9', qrUrl: '' },
+  { symbol: 'ETH', name: 'Ethereum', icon: 'eth', network: 'Ethereum (ERC20)', address: '0xAf26e02916bfbc0E49CE82A253988058259fe71E', qrUrl: '' },
+  { symbol: 'USDC', name: 'USD Coin', icon: 'usdc', network: 'Ethereum (ERC20)', address: '0xAf26e02916bfbc0E49CE82A253988058259fe71E', qrUrl: '' },
+  { symbol: 'SOL', name: 'Solana', icon: 'sol', network: 'Solana', address: 'Dt2h9YR127SM2kTiPS3keir1fqYN1qp9ZH2MNpAEHm6P', qrUrl: '' }
+];
+
+let depositCoins = [];
+let currentAsset = null;
+
+function iconUrl(icon) {
+  return 'https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/128/color/' + icon + '.png';
+}
+
+async function loadCoins() {
+  try {
+    const doc = await db.collection('settings').doc('depositCoins').get();
+    if (doc.exists && Array.isArray(doc.data().coins) && doc.data().coins.length > 0) {
+      depositCoins = doc.data().coins;
+    } else {
+      depositCoins = DEFAULT_COINS;
+    }
+  } catch (e) {
+    console.error('Load coins error:', e);
+    depositCoins = DEFAULT_COINS;
+  }
+  
+  document.getElementById('loading-section').style.display = 'none';
+  document.getElementById('deposit-section').style.display = 'block';
+  
+  renderTabs();
+  if (depositCoins.length > 0) {
+    selectAsset(depositCoins[0]);
+  }
+}
+
+function renderTabs() {
+  const tabsEl = document.getElementById('asset-tabs');
+  tabsEl.innerHTML = '';
+  
+  if (depositCoins.length === 0) {
+    tabsEl.innerHTML = '<div style="color:var(--text-dim);padding:10px;">No coins available. Please contact admin.</div>';
+    return;
+  }
+  
+  depositCoins.forEach((a, i) => {
+    const btn = document.createElement('button');
+    btn.textContent = a.symbol;
+    if (i === 0) btn.classList.add('active');
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      selectAsset(a);
+    });
+    tabsEl.appendChild(btn);
+  });
+}
+
+function selectAsset(a) {
+  currentAsset = a;
+  document.getElementById('header-icon').src = iconUrl(a.icon || a.symbol.toLowerCase());
+  document.getElementById('network-label').textContent = 'Network: ' + (a.network || '-');
+  document.getElementById('address-box').textContent = a.address || 'Address not set';
+  
+  const qrSrc = a.qrUrl || ('https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + encodeURIComponent(a.address || 'NotSet'));
+  document.getElementById('qr-img').src = qrSrc;
+  
+  document.getElementById('copy-btn').classList.remove('copied');
+  document.getElementById('copy-btn').textContent = translations[localStorage.getItem('appLang') || 'en']['copy_address'] || 'Copy address';
+  document.getElementById('copy-btn').dataset.address = a.address || '';
+  document.getElementById('amount-label').textContent = `How much ${a.symbol} have you deposited?`;
+  document.getElementById('amount-input').placeholder = `Enter deposit amount (${a.symbol})`;
+  document.getElementById('amount-input').value = '';
+  document.getElementById('amount-error').textContent = '';
+  resetProgress();
+}
+
+document.getElementById('copy-btn').addEventListener('click', function () {
+  const address = this.dataset.address;
+  if (!address) return;
+  navigator.clipboard.writeText(address).then(() => {
+    this.textContent = 'Copied!';
+    this.classList.add('copied');
+    setTimeout(() => { 
+      this.textContent = translations[localStorage.getItem('appLang') || 'en']['copy_address'] || 'Copy address'; 
+      this.classList.remove('copied'); 
+    }, 2000);
+  });
+});
+
+document.getElementById('upload-btn').addEventListener('click', () => {
+  const errorEl = document.getElementById('amount-error');
+  const amountVal = parseFloat(document.getElementById('amount-input').value);
+  if (isNaN(amountVal) || amountVal <= 0) {
+    errorEl.textContent = 'Please enter the deposit amount.';
+    return;
+  }
+  errorEl.textContent = '';
+  document.getElementById('proof-input').click();
+});
+
+function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+
+function resetProgress() {
+  const progressWrap = document.getElementById('upload-progress');
+  const spinner = document.getElementById('spinner-circle');
+  const text = document.getElementById('progress-text');
+  progressWrap.classList.remove('show');
+  spinner.classList.remove('complete', 'error');
+  text.classList.remove('complete', 'error');
+  text.textContent = 'Uploading...';
+  document.getElementById('upload-btn').style.display = '';
+  document.getElementById('upload-btn').disabled = false;
+}
+
+document.getElementById('proof-input').addEventListener('change', async function () {
+  if (!this.files || this.files.length === 0) return;
+  if (!currentUser) return;
+  if (!currentAsset) return;
+
+  const file = this.files[0];
+  const amountVal = parseFloat(document.getElementById('amount-input').value);
+  const uploadBtn = document.getElementById('upload-btn');
+  const progressWrap = document.getElementById('upload-progress');
+  const spinner = document.getElementById('spinner-circle');
+  const text = document.getElementById('progress-text');
+
+  uploadBtn.style.display = 'none';
+  uploadBtn.disabled = true;
+  spinner.classList.remove('complete', 'error');
+  text.classList.remove('complete', 'error');
+  text.textContent = 'Uploading...';
+  progressWrap.classList.add('show');
+
+  const startTime = Date.now();
+  const MIN_UPLOADING_MS = 2000;
+
+  try {
+    const formData = new FormData();
+    formData.append('image', file);
+
+    const uploadRes = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+      method: 'POST',
+      body: formData
+    });
+    const uploadData = await uploadRes.json();
+    if (!uploadData.success) throw new Error('Image upload failed');
+    const proofUrl = uploadData.data.url;
+
+    await db.collection('deposits').add({
+      uid: currentUser.uid,
+      userEmail: currentUser.email || '',
+      symbol: currentAsset.symbol,
+      claimedAmount: amountVal,
+      proofUrl: proofUrl,
+      status: 'pending',
+      creditedUSDT: null,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    const elapsed = Date.now() - startTime;
+    if (elapsed < MIN_UPLOADING_MS) {
+      await sleep(MIN_UPLOADING_MS - elapsed);
+    }
+
+    spinner.classList.add('complete');
+    text.classList.add('complete');
+    text.textContent = 'Upload Complete';
+    document.getElementById('amount-input').value = '';
+
+    await sleep(1000);
+    window.location.href = 'market.html';
+
+  } catch (err) {
+    spinner.classList.add('error');
+    text.classList.add('error');
+    text.textContent = 'Something went wrong: ' + err.message;
+    uploadBtn.style.display = '';
+    uploadBtn.disabled = false;
+  } finally {
+    this.value = '';
+  }
+});
+
+firebase.auth().onAuthStateChanged(user => {
+  if (user) {
+    currentUser = user;
+    loadCoins();
+  }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Admin - Live Support</title>
+<style>
+  :root{
+    --bg:#0B0D12;
+    --panel:#12151D;
+    --panel-2:#181C27;
+    --border:#242938;
+    --gold:#F0B90B;
+    --text:#F5F6FA;
+    --text-dim:#8B93A7;
+    --bubble-customer:#1E2330;
+    --bubble-admin:#F0B90B;
+    --bubble-admin-text:#12151D;
+    --danger:#F6465D;
+    --online:#16C784;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0;height:100%;
+    background:var(--bg);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans Bengali",sans-serif;
+    color:var(--text);
+    overflow:hidden;
+    overscroll-behavior:none;
+    -webkit-text-size-adjust:100%;
+    touch-action:pan-y;
+    position:fixed;
+    inset:0;
+    width:100%;
+  }
+
+  .auth-gate{
+    height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:16px;
+    padding:24px;
+  }
+  .auth-gate .logo{
+    width:56px;height:56px;border-radius:50%;
+    background:var(--gold);display:flex;align-items:center;justify-content:center;
+    font-size:26px;margin-bottom:6px;
+  }
+  .auth-gate h2{margin:0;font-size:19px;}
+  .auth-gate p{margin:0;color:var(--text-dim);font-size:13px;text-align:center;}
+  .auth-gate input{
+    width:100%;max-width:300px;
+    background:var(--panel-2);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:13px 14px;
+    color:var(--text);
+    font-size:14px;
+    outline:none;
+  }
+  .auth-gate input:focus{border-color:var(--gold);}
+  .auth-gate button{
+    width:100%;max-width:300px;
+    background:var(--gold);
+    color:#12151D;
+    border:none;
+    border-radius:10px;
+    padding:13px;
+    font-weight:700;
+    font-size:14px;
+    cursor:pointer;
+  }
+  .auth-error{color:var(--danger);font-size:12.5px;min-height:16px;}
+
+  .app{
+    display:none;
+    height:100vh;
+    height:100dvh;
+    height:calc(var(--app-height, 100vh));
+    grid-template-columns:320px 1fr;
+    overflow:hidden;
+  }
+  @media(min-width:1px){ .app{ display:grid; } }
+  .app.hidden{display:none !important;}
+
+  .sidebar{
+    background:var(--panel);
+    border-right:1px solid var(--border);
+    display:flex;
+    flex-direction:column;
+    min-width:0;
+    overflow:hidden;
+  }
+  .sidebar-header{
+    display:flex;align-items:center;gap:10px;
+    padding:16px 16px;
+    border-bottom:1px solid var(--border);
+    background:var(--panel-2);
+    flex-shrink:0;
+  }
+  .sidebar-header .avatar{
+    width:34px;height:34px;border-radius:50%;
+    background:var(--gold);display:flex;align-items:center;justify-content:center;font-size:16px;
+  }
+  .sidebar-header .title{font-weight:700;font-size:14px;}
+  .sidebar-header .sub{font-size:11px;color:var(--online);}
+  .logout-btn{
+    margin-left:auto;background:none;border:1px solid var(--border);
+    color:var(--text-dim);border-radius:8px;padding:6px 10px;font-size:11.5px;cursor:pointer;
+  }
+  .logout-btn:hover{border-color:var(--danger);color:var(--danger);}
+
+  .search-box{padding:10px 12px;border-bottom:1px solid var(--border);flex-shrink:0;}
+  .search-box input{
+    width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;
+    padding:9px 12px;color:var(--text);font-size:16px;outline:none;
+  }
+  .search-box input:focus{border-color:var(--gold);}
+
+  .chat-list{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;}
+  .chat-item{
+    display:flex;gap:10px;align-items:flex-start;
+    padding:13px 14px;border-bottom:1px solid var(--border);
+    cursor:pointer;position:relative;
+  }
+  .chat-item:hover{background:var(--panel-2);}
+  .chat-item.active{background:var(--panel-2);border-left:3px solid var(--gold);}
+  .chat-item .ci-avatar{
+    width:36px;height:36px;border-radius:50%;flex-shrink:0;
+    background:var(--bubble-customer);display:flex;align-items:center;justify-content:center;
+    font-size:14px;font-weight:700;color:var(--gold);
+  }
+  .chat-item .ci-body{min-width:0;flex:1;}
+  .chat-item .ci-name{font-size:13.5px;font-weight:600;display:flex;justify-content:space-between;gap:6px;}
+  .chat-item .ci-time{font-size:10.5px;color:var(--text-dim);font-weight:400;}
+  .chat-item .ci-last{
+    font-size:12px;color:var(--text-dim);margin-top:3px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .chat-item .ci-last.typing{color:var(--gold);font-style:italic;}
+  .unread-badge{
+    background:var(--gold);color:#12151D;font-size:10px;font-weight:800;
+    border-radius:999px;min-width:18px;height:18px;display:flex;align-items:center;justify-content:center;
+    padding:0 5px;flex-shrink:0;
+  }
+  .empty-list{padding:30px 16px;color:var(--text-dim);font-size:13px;text-align:center;}
+
+  .chat-panel{display:flex;flex-direction:column;min-width:0;background:var(--panel);overflow:hidden;}
+  .chat-panel-header{
+    display:flex;align-items:center;gap:12px;
+    padding:16px 18px;border-bottom:1px solid var(--border);background:var(--panel-2);
+    flex-shrink:0;
+  }
+  .chat-panel-header .cph-avatar{
+    width:38px;height:38px;border-radius:50%;background:var(--bubble-customer);
+    display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--gold);
+  }
+  .chat-panel-header .cph-name{font-weight:700;font-size:14.5px;}
+  .chat-panel-header .cph-sub{font-size:11.5px;color:var(--text-dim);}
+  .chat-panel-header .cph-sub.typing{color:var(--gold);font-style:italic;}
+  .resolve-btn{
+    margin-left:auto;background:none;border:1px solid var(--border);color:var(--text-dim);
+    border-radius:8px;padding:7px 12px;font-size:12px;cursor:pointer;
+  }
+  .resolve-btn:hover{border-color:var(--online);color:var(--online);}
+
+  .messages{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:20px;display:flex;flex-direction:column;gap:10px;}
+  .msg{max-width:65%;padding:10px 14px;border-radius:14px;font-size:14px;line-height:1.45;word-wrap:break-word;}
+  .msg.customer{align-self:flex-start;background:var(--bubble-customer);color:var(--text);border-bottom-left-radius:4px;}
+  .msg.admin{align-self:flex-end;background:var(--bubble-admin);color:var(--bubble-admin-text);border-bottom-right-radius:4px;}
+  .msg .time{display:block;font-size:10px;opacity:.6;margin-top:4px;}
+  
+  .msg-image{
+    max-width:100%;
+    border-radius:10px;
+    cursor:pointer;
+    display:block;
+  }
+
+  .composer{display:flex;gap:8px;padding:14px;border-top:1px solid var(--border);background:var(--panel-2);flex-shrink:0;align-items:center;}
+  .composer input{
+    flex:1;background:var(--bg);border:1px solid var(--border);border-radius:22px;
+    padding:12px 16px;color:var(--text);font-size:16px;outline:none;
+  }
+  .composer input:focus{border-color:var(--gold);}
+  .composer .attach-btn{
+    background:none;
+    border:none;
+    color:var(--text-dim);
+    font-size:20px;
+    cursor:pointer;
+    padding:4px;
+    flex-shrink:0;
+  }
+  .composer .attach-btn:hover{ color:var(--gold); }
+  .composer button{
+    background:var(--gold);color:#12151D;border:none;border-radius:50%;
+    width:44px;height:44px;font-size:16px;cursor:pointer;flex-shrink:0;
+  }
+  .composer button:disabled{opacity:.5;cursor:default;}
+
+  .no-chat-selected{
+    flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    color:var(--text-dim);gap:8px;
+  }
+  .no-chat-selected .big{font-size:34px;}
+
+  @media(max-width:760px){
+    .app{grid-template-columns:1fr;}
+    .sidebar{position:fixed;inset:0;z-index:5;transition:transform .25s;}
+    .sidebar.slide-out{transform:translateX(-100%);}
+    .chat-panel{position:relative;}
+    .back-to-list{
+      display:inline-flex;background:none;border:none;color:var(--text-dim);
+      font-size:20px;cursor:pointer;margin-right:2px;
+    }
+  }
+  .back-to-list{display:none;}
+  @media(max-width:760px){ .back-to-list{display:inline-flex;} }
+</style>
+</head>
+<body>
+
+<div class="auth-gate" id="authGate">
+  <div class="logo">🔒</div>
+  <h2>Admin Login</h2>
+  <p>এডমিন প্যানেলে ঢুকতে আপনার এডমিন ইমেইল ও পাসওয়ার্ড দিন</p>
+  <input id="adminEmailInput" type="email" placeholder="Admin email" autocomplete="off">
+  <input id="adminPassInput" type="password" placeholder="Password" autocomplete="off">
+  <button id="adminLoginBtn">Login</button>
+  <div class="auth-error" id="authError"></div>
+</div>
+
+<div class="app hidden" id="appShell">
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="avatar">🎧</div>
+      <div>
+        <div class="title">Support Inbox</div>
+        <div class="sub" id="chatCountLabel">0 active chats</div>
+      </div>
+      <button class="logout-btn" id="logoutBtn">Logout</button>
+    </div>
+    <div class="search-box">
+      <input id="searchInput" type="text" placeholder="নাম দিয়ে খুঁজুন...">
+    </div>
+    <div class="chat-list" id="chatList">
+      <div class="empty-list">লোড হচ্ছে…</div>
+    </div>
+  </div>
+
+  <div class="chat-panel" id="chatPanel">
+    <div class="no-chat-selected" id="noChatSelected">
+      <div class="big">💬</div>
+      <div>বাম পাশ থেকে একটি চ্যাট সিলেক্ট করুন</div>
+    </div>
+
+    <div id="activeChatView" style="display:none;flex-direction:column;height:100%;">
+      <div class="chat-panel-header">
+        <button class="back-to-list" id="backToList">←</button>
+        <div class="cph-avatar" id="cphAvatar">?</div>
+        <div>
+          <div class="cph-name" id="cphName">—</div>
+          <div class="cph-sub" id="cphSub">—</div>
+        </div>
+        <button class="resolve-btn" id="resolveBtn">Mark as resolved</button>
+      </div>
+      <div class="messages" id="messages"></div>
+      <div class="composer">
+        <input type="file" id="imageInput" accept="image/*" style="display:none;">
+        <button class="attach-btn" id="attachBtn" title="Attach image">📎</button>
+        <input id="msgInput" type="text" placeholder="উত্তর লিখুন…" maxlength="1000">
+        <button id="sendBtn">➤</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyDJoPr8RvE1xkNTKRr5kwTx6E51GCMn_HE",
+    authDomain: "abc-company-6272a.firebaseapp.com",
+    projectId: "abc-company-6272a",
+    storageBucket: "abc-company-6272a.firebasestorage.app",
+    messagingSenderId: "1026212780106",
+    appId: "1:1026212780106:web:985ec1bc35837d6320eeb3"
+  };
+
+  // ★★★ এখানে আপনার ImgBB API Key বসান ★★★
+  const IMGBB_API_KEY = '0dae5f846c7bc79071442d3c548697fc';
+
+  const ADMIN_EMAIL = "mrtiger6662@gmail.com";
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+
+  function setAppHeight(){
+    const h = (window.visualViewport ? window.visualViewport.height : window.innerHeight);
+    document.documentElement.style.setProperty('--app-height', h + 'px');
+    window.scrollTo(0, 0);
+  }
+  setAppHeight();
+  window.addEventListener('resize', setAppHeight);
+  if (window.visualViewport){
+    window.visualViewport.addEventListener('resize', setAppHeight);
+    window.visualViewport.addEventListener('scroll', setAppHeight);
+  }
+
+  const authGate       = document.getElementById('authGate');
+  const adminEmailInput= document.getElementById('adminEmailInput');
+  const adminPassInput = document.getElementById('adminPassInput');
+  const adminLoginBtn  = document.getElementById('adminLoginBtn');
+  const authError      = document.getElementById('authError');
+  const appShell        = document.getElementById('appShell');
+  const chatList         = document.getElementById('chatList');
+  const chatCountLabel   = document.getElementById('chatCountLabel');
+  const searchInput      = document.getElementById('searchInput');
+  const noChatSelected    = document.getElementById('noChatSelected');
+  const activeChatView    = document.getElementById('activeChatView');
+  const cphAvatar = document.getElementById('cphAvatar');
+  const cphName   = document.getElementById('cphName');
+  const cphSub    = document.getElementById('cphSub');
+  const resolveBtn= document.getElementById('resolveBtn');
+  const messagesEl = document.getElementById('messages');
+  const msgInput   = document.getElementById('msgInput');
+  const sendBtn    = document.getElementById('sendBtn');
+  const logoutBtn  = document.getElementById('logoutBtn');
+  const sidebar    = document.getElementById('sidebar');
+  const backToList = document.getElementById('backToList');
+  const imageInput = document.getElementById('imageInput');
+  const attachBtn  = document.getElementById('attachBtn');
+
+  let allChats = [];
+  let activeChatId = null;
+  let unsubscribeMessages = null;
+
+  function tryLogin(){
+    const email = adminEmailInput.value.trim();
+    const pass = adminPassInput.value;
+    authError.textContent = '';
+
+    if (!email || !pass){
+      authError.textContent = 'ইমেইল ও পাসওয়ার্ড দিন।';
+      return;
+    }
+
+    firebase.auth().signInWithEmailAndPassword(email, pass)
+      .then(cred => {
+        if ((cred.user.email || '').toLowerCase() !== ADMIN_EMAIL.toLowerCase()){
+          authError.textContent = 'এই অ্যাকাউন্টের admin-support.html দেখার অনুমতি নেই।';
+          firebase.auth().signOut();
+          return;
+        }
+        authGate.style.display = 'none';
+        appShell.classList.remove('hidden');
+        initInbox();
+      })
+      .catch(err => {
+        authError.textContent = 'লগইন ব্যর্থ: ' + err.message;
+      });
+  }
+  adminLoginBtn.addEventListener('click', tryLogin);
+  adminPassInput.addEventListener('keydown', e => { if (e.key === 'Enter') tryLogin(); });
+  adminEmailInput.addEventListener('keydown', e => { if (e.key === 'Enter') tryLogin(); });
+
+  logoutBtn.addEventListener('click', () => {
+    firebase.auth().signOut().then(() => location.reload());
+  });
+
+  firebase.auth().onAuthStateChanged(user => {
+    if (user && (user.email || '').toLowerCase() === ADMIN_EMAIL.toLowerCase()){
+      authGate.style.display = 'none';
+      appShell.classList.remove('hidden');
+      initInbox();
+    }
+  });
+
+  let inboxInitialized = false;
+  function initInbox(){
+    if (inboxInitialized) return;
+    inboxInitialized = true;
+
+    db.collection('supportChats')
+      .orderBy('lastMessageAt', 'desc')
+      .onSnapshot(snap => {
+        allChats = [];
+        snap.forEach(doc => allChats.push({ id: doc.id, ...doc.data() }));
+        renderChatList();
+        updateActiveHeaderTyping();
+      }, err => {
+        chatList.innerHTML = '<div class="empty-list">লোড করতে সমস্যা হয়েছে।<br>Firestore rules চেক করুন।</div>';
+        console.error(err);
+      });
+
+    setInterval(cleanupExpiredChats, 30000);
+  }
+
+  async function deleteChatCompletely(chatId){
+    const chatRef = db.collection('supportChats').doc(chatId);
+    const msgsSnap = await chatRef.collection('messages').get();
+    const batch = db.batch();
+    msgsSnap.forEach(doc => batch.delete(doc.ref));
+    batch.delete(chatRef);
+    await batch.commit();
+  }
+
+  const CHAT_EXPIRY_MS = 15 * 60 * 1000;
+
+  function cleanupExpiredChats(){
+    const now = Date.now();
+    allChats.forEach(chat => {
+      if (!chat.lastMessageAt || !chat.lastMessageAt.toDate) return;
+      const lastMs = chat.lastMessageAt.toDate().getTime();
+      if (now - lastMs > CHAT_EXPIRY_MS){
+        deleteChatCompletely(chat.id).then(() => {
+          if (activeChatId === chat.id){
+            activeChatId = null;
+            if (unsubscribeMessages){ unsubscribeMessages(); unsubscribeMessages = null; }
+            activeChatView.style.display = 'none';
+            noChatSelected.style.display = 'flex';
+          }
+        }).catch(err => console.error('Failed to delete expired chat', chat.id, err));
+      }
+    });
+  }
+
+  function initials(name){
+    if (!name) return '?';
+    return name.trim().charAt(0).toUpperCase();
+  }
+
+  function fmtTime(ts){
+    if (!ts || !ts.toDate) return '';
+    const d = ts.toDate();
+    return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function renderChatList(){
+    const q = searchInput.value.trim().toLowerCase();
+    const filtered = allChats.filter(c => (c.customerName || '').toLowerCase().includes(q));
+
+    chatCountLabel.textContent = allChats.length + ' active chat' + (allChats.length === 1 ? '' : 's');
+
+    if (filtered.length === 0){
+      chatList.innerHTML = '<div class="empty-list">কোনো চ্যাট পাওয়া যায়নি।</div>';
+      return;
+    }
+
+    chatList.innerHTML = '';
+    filtered.forEach(chat => {
+      const item = document.createElement('div');
+      item.className = 'chat-item' + (chat.id === activeChatId ? ' active' : '');
+      const unread = chat.unreadByAdmin || 0;
+      const isTyping = !!chat.customerTyping;
+      const lastLine = isTyping ? 'Typing…' : (chat.lastMessage || '');
+      item.innerHTML = `
+        <div class="ci-avatar">${initials(chat.customerName)}</div>
+        <div class="ci-body">
+          <div class="ci-name">
+            <span>${escapeHtml(chat.customerName || 'Unknown')}</span>
+            <span class="ci-time">${fmtTime(chat.lastMessageAt)}</span>
+          </div>
+          <div class="ci-last${isTyping ? ' typing' : ''}">${escapeHtml(lastLine)}</div>
+        </div>
+        ${unread > 0 ? `<div class="unread-badge">${unread}</div>` : ''}
+      `;
+      item.addEventListener('click', () => openChat(chat));
+      chatList.appendChild(item);
+    });
+  }
+
+  searchInput.addEventListener('input', renderChatList);
+
+  function escapeHtml(str){
+    return String(str).replace(/[&<>"']/g, s => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    }[s]));
+  }
+
+  function updateActiveHeaderTyping(){
+    if (!activeChatId) return;
+    const chat = allChats.find(c => c.id === activeChatId);
+    if (!chat) return;
+    if (chat.customerTyping){
+      cphSub.textContent = 'Typing…';
+      cphSub.classList.add('typing');
+    } else {
+      cphSub.textContent = 'Chat ID: ' + chat.id;
+      cphSub.classList.remove('typing');
+    }
+  }
+
+  let adminTypingTimeout = null;
+  msgInput.addEventListener('input', () => {
+    if (!activeChatId) return;
+    db.collection('supportChats').doc(activeChatId).set({ adminTyping: true }, { merge: true });
+    clearTimeout(adminTypingTimeout);
+    adminTypingTimeout = setTimeout(() => {
+      db.collection('supportChats').doc(activeChatId).set({ adminTyping: false }, { merge: true });
+    }, 1500);
+  });
+
+  function openChat(chat){
+    activeChatId = chat.id;
+    noChatSelected.style.display = 'none';
+    activeChatView.style.display = 'flex';
+    cphAvatar.textContent = initials(chat.customerName);
+    cphName.textContent = chat.customerName || 'Unknown';
+    cphSub.textContent = 'Chat ID: ' + chat.id;
+    sidebar.classList.add('slide-out');
+
+    renderChatList();
+    updateActiveHeaderTyping();
+
+    db.collection('supportChats').doc(chat.id).set({ unreadByAdmin: 0 }, { merge: true });
+
+    if (unsubscribeMessages) unsubscribeMessages();
+    unsubscribeMessages = db.collection('supportChats').doc(chat.id)
+      .collection('messages')
+      .orderBy('timestamp')
+      .onSnapshot(snap => {
+        messagesEl.innerHTML = '';
+        snap.forEach(doc => {
+          const m = doc.data();
+          const div = document.createElement('div');
+          div.className = 'msg ' + (m.sender === 'admin' ? 'admin' : 'customer');
+          
+          let contentHtml = '';
+          if (m.imageUrl) {
+            contentHtml += `<img src="${m.imageUrl}" class="msg-image" onclick="window.open('${m.imageUrl}','_blank')">`;
+          }
+          if (m.text) {
+            if (contentHtml) contentHtml += '<br>';
+            contentHtml += escapeHtml(m.text);
+          }
+          
+          div.innerHTML = contentHtml + '<span class="time">' + fmtTime(m.timestamp) + '</span>';
+          messagesEl.appendChild(div);
+        });
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+      });
+  }
+
+  backToList.addEventListener('click', () => {
+    sidebar.classList.remove('slide-out');
+  });
+
+  function sendReply(){
+    const text = msgInput.value.trim();
+    if (!text || !activeChatId) return;
+    msgInput.value = '';
+    clearTimeout(adminTypingTimeout);
+
+    const chatRef = db.collection('supportChats').doc(activeChatId);
+    chatRef.collection('messages').add({
+      sender: 'admin',
+      text: text,
+      timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    chatRef.set({
+      lastMessage: text,
+      lastMessageAt: firebase.firestore.FieldValue.serverTimestamp(),
+      adminTyping: false
+    }, { merge: true });
+  }
+  sendBtn.addEventListener('click', sendReply);
+  msgInput.addEventListener('keydown', e => { if (e.key === 'Enter') sendReply(); });
+
+  // ====== অ্যাডমিনের ImgBB ছবি আপলোড ======
+  attachBtn.addEventListener('click', () => imageInput.click());
+
+  imageInput.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file || !activeChatId) return;
+
+    if (file.size > 32 * 1024 * 1024) {
+      alert('ছবিটি ৩২ মেগাবাইটের বেশি।');
+      return;
+    }
+
+    attachBtn.disabled = true;
+    attachBtn.textContent = '⏳';
+
+    try {
+      const chatRef = db.collection('supportChats').doc(activeChatId);
+      
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+        method: 'POST',
+        body: formData
+      });
+      
+      const data = await res.json();
+      if (!data.success) throw new Error('Upload failed');
+      
+      const downloadUrl = data.data.url;
+
+      await chatRef.collection('messages').add({
+        sender: 'admin',
+        imageUrl: downloadUrl,
+        text: '',
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      });
+
+      await chatRef.set({
+        lastMessage: '📷 ছবি',
+        lastMessageAt: firebase.firestore.FieldValue.serverTimestamp(),
+        adminTyping: false
+      }, { merge: true });
+
+    } catch (err) {
+      console.error('Admin image upload failed:', err);
+      alert('ছবি পাঠানো যায়নি। আবার চেষ্টা করুন।');
+    } finally {
+      attachBtn.disabled = false;
+      attachBtn.textContent = '📎';
+      imageInput.value = '';
+    }
+  });
+  // =========================================
+
+  resolveBtn.addEventListener('click', () => {
+    if (!activeChatId) return;
+    db.collection('supportChats').doc(activeChatId).set({
+      status: 'resolved',
+      unreadByAdmin: 0
+    }, { merge: true });
+    resolveBtn.textContent = 'Resolved ✓';
+    setTimeout(() => resolveBtn.textContent = 'Mark as resolved', 1500);
+  });
+</script>
+</body>
+</html>
