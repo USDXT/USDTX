@@ -428,11 +428,12 @@ function updateBalanceDisplay() {
   if (el) el.textContent = `Est. Total Value: ${currentBalance.toFixed(2)} USDT`;
 }
 
-function setBalance(newVal) {
+async function incrementBalance(delta) {
   if (!currentUser) return;
-  firebase.firestore().collection('users').doc(currentUser.uid).update({
-    balance: newVal
-  }).catch(err => console.error('Balance update failed:', err));
+  const userRef = firebase.firestore().collection('users').doc(currentUser.uid);
+  await userRef.update({
+    balance: firebase.firestore.FieldValue.increment(delta)
+  });
 }
 
 firebase.auth().onAuthStateChanged(user => {
