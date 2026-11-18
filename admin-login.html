@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Login</title>
+<style>
+  :root{
+    --bg:#0a0d12;
+    --surface:#11151c;
+    --border:#232a36;
+    --text:#e8edf5;
+    --muted:#8b95a7;
+    --gold:#f0b90b;
+    --btn-text:#161a1e;
+    --danger:#ea3943;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0;height:100%;
+    background:
+      radial-gradient(900px 500px at 85% -10%, rgba(240,185,11,.07), transparent 60%),
+      var(--bg);
+    color:var(--text);
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    display:flex;align-items:center;justify-content:center;
+    padding:24px;
+  }
+  .card{
+    width:100%;max-width:430px;
+    background:linear-gradient(180deg,rgba(255,255,255,.03),transparent),var(--surface);
+    border:1px solid var(--border);
+    border-radius:22px;
+    padding:34px;
+    box-shadow:0 10px 30px rgba(0,0,0,.35);
+  }
+  .logo{
+    width:62px;height:62px;margin:0 auto 18px;
+    display:grid;place-items:center;
+    border-radius:20px;
+    background:rgba(240,185,11,.12);
+    color:var(--gold);
+    font-size:26px;
+    border:1px solid rgba(240,185,11,.25);
+  }
+  h2{margin:0 0 8px;font-size:22px;font-weight:800;text-align:center;}
+  p.sub{
+    color:var(--muted);font-size:13.5px;text-align:center;
+    line-height:1.55;margin:0 0 22px;
+  }
+  label{
+    display:block;font-size:10px;font-weight:800;color:var(--muted);
+    text-transform:uppercase;letter-spacing:.6px;margin:0 0 6px;
+  }
+  input{
+    width:100%;background:var(--surface);border:1px solid var(--border);
+    color:var(--text);padding:13px 14px;border-radius:11px;
+    font-size:14px;outline:none;transition:.18s ease;margin-bottom:14px;
+  }
+  input:focus{border-color:rgba(240,185,11,.55);box-shadow:0 0 0 3px rgba(240,185,11,.1);}
+  button{
+    width:100%;padding:14px;border:none;border-radius:12px;
+    background:linear-gradient(135deg,#ffd54a,var(--gold));
+    color:var(--btn-text);font-size:14px;font-weight:800;cursor:pointer;
+    transition:.18s ease;
+  }
+  button:active{transform:scale(.985);}
+  button:disabled{opacity:.5;cursor:not-allowed;}
+  .error{
+    color:var(--danger);font-size:12.5px;text-align:center;
+    min-height:18px;margin-top:12px;
+  }
+  .back{
+    display:block;text-align:center;margin-top:14px;
+    color:var(--muted);font-size:12.5px;text-decoration:none;
+  }
+  .back:hover{color:var(--gold);}
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">&#128272;</div>
+    <h2>Admin Login</h2>
+    <p class="sub">অ্যাডমিন কন্ট্রোল প্যানেলে প্রবেশ করতে আপনার অ্যাডমিন ইমেইল ও পাসওয়ার্ড দিন</p>
+
+    <label>Email</label>
+    <input id="emailInput" type="email" placeholder="Admin email" autocomplete="off">
+    <label>Password</label>
+    <input id="passInput" type="password" placeholder="Password">
+
+    <button id="loginBtn">Login</button>
+    <div class="error" id="errorMsg"></div>
+    <a class="back" href="login.html">&#8592; User login page</a>
+  </div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script>
+const ADMIN_EMAIL = "mrtiger6662@gmail.com";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDJoPr8RvE1xkNTKRr5kwTx6E51GCMn_HE",
+  authDomain: "abc-company-6272a.firebaseapp.com",
+  projectId: "abc-company-6272a",
+  storageBucket: "abc-company-6272a.firebasestorage.app",
+  messagingSenderId: "1026212780106",
+  appId: "1:1026212780106:web:985ec1bc35837d6320eeb3"
+};
+firebase.initializeApp(firebaseConfig);
+
+const emailInput = document.getElementById('emailInput');
+const passInput  = document.getElementById('passInput');
+const loginBtn   = document.getElementById('loginBtn');
+const errorMsg   = document.getElementById('errorMsg');
+
+function tryLogin(){
+  const email = emailInput.value.trim();
+  const pass  = passInput.value;
+  errorMsg.textContent = '';
+
+  if (!email || !pass){
+    errorMsg.textContent = 'ইমেইল ও পাসওয়ার্ড দিন।';
+    return;
+  }
+
+  loginBtn.disabled = true;
+  loginBtn.textContent = 'Logging in...';
+
+  firebase.auth().signInWithEmailAndPassword(email, pass)
+    .then(cred => {
+      if ((cred.user.email || '').toLowerCase() !== ADMIN_EMAIL.toLowerCase()){
+        errorMsg.textContent = 'এই অ্যাকাউন্টের অ্যাডমিন প্যানেলে প্রবেশের অনুমতি নেই।';
+        firebase.auth().signOut();
+        loginBtn.disabled = false;
+        loginBtn.textContent = 'Login';
+        return;
+      }
+      window.location.replace('admin.html');
+    })
+    .catch(err => {
+      errorMsg.textContent = 'লগইন ব্যর্থ হয়েছে। ইমেইল বা পাসওয়ার্ড ভুল।';
+      loginBtn.disabled = false;
+      loginBtn.textContent = 'Login';
+    });
+}
+
+loginBtn.addEventListener('click', tryLogin);
+passInput.addEventListener('keydown', e => { if (e.key === 'Enter') tryLogin(); });
+emailInput.addEventListener('keydown', e => { if (e.key === 'Enter') tryLogin(); });
+
+// আগে থেকেই অ্যাডমিন লগইন থাকলে সরাসরি প্যানেলে পাঠানো
+firebase.auth().onAuthStateChanged(user => {
+  if (user && (user.email || '').toLowerCase() === ADMIN_EMAIL.toLowerCase()){
+    window.location.replace('admin.html');
+  }
+});
+</script>
+</body>
+</html>
