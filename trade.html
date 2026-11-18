@@ -428,8 +428,17 @@ function updateBalanceDisplay() {
   if (el) el.textContent = `Est. Total Value: ${currentBalance.toFixed(2)} USDT`;
 }
 
-async function incrementBalance(delta) {
+// ⚠️ এটা এখন আর ট্রেডে ব্যবহার হবে না, শুধু reference-এর জন্য রাখা হলো
+function setBalance(newVal) {
   if (!currentUser) return;
+  firebase.firestore().collection('users').doc(currentUser.uid).update({
+    balance: newVal
+  }).catch(err => console.error('Balance update failed:', err));
+}
+
+// ✅ নতুন atomic balance helper
+async function incrementBalance(delta) {
+  if (!currentUser) throw new Error('No user');
   const userRef = firebase.firestore().collection('users').doc(currentUser.uid);
   await userRef.update({
     balance: firebase.firestore.FieldValue.increment(delta)
@@ -773,8 +782,7 @@ function openChart(coin) {
 
   loadChart();
   clearInterval(refreshTimer);
-  // ★★★ এখানে ১০০০ মিলিসেকেন্ড (১ সেকেন্ড) করা হয়েছে ★★★
-  refreshTimer = setInterval(loadChart, 1000); 
+  refreshTimer = setInterval(loadChart, 1000);
 }
 
 backBtn.addEventListener('click', () => {
@@ -902,6 +910,9 @@ async function fetchLivePrice(symbol) {
   return parseFloat(data.price);
 }
 
+// ============================================================
+// ✅ FIXED placeTrade — atomic balance updates
+// ============================================================
 async function placeTrade(direction) {
   if (tradeInProgress) return;
   const amount = validateAmount();
@@ -917,14 +928,22 @@ async function placeTrade(direction) {
   downBtn.disabled = true;
   amountInput.disabled = true;
 
-  const balanceAfterStake = getBalance() - amount;
-  setBalance(balanceAfterStake);
+  // ধাপ ১: stake atomic ভাবে কাটা
+  try {
+    await incrementBalance(-amount);
+  } catch (err) {
+    console.error('Failed to deduct stake:', err);
+    resetTradeButtons();
+    alert('Failed to deduct balance. Trade cancelled.');
+    return;
+  }
 
   let entryPrice;
   try {
     entryPrice = await fetchLivePrice(currentSymbol.symbol);
   } catch (err) {
-    setBalance(balanceAfterStake + amount);
+    // রিফান্ড
+    try { await incrementBalance(amount); } catch (e) {}
     resetTradeButtons();
     alert('Failed to fetch price, trade cancelled.');
     return;
@@ -953,6 +972,11 @@ async function placeTrade(direction) {
     });
   } catch (e) {
     console.error('Failed to save trade record:', e);
+    // ট্রেড সেভ না হলে stake ফেরত
+    try { await incrementBalance(amount); } catch (err) {}
+    resetTradeButtons();
+    alert('Failed to save trade. Trade cancelled.');
+    return;
   }
 
   tmTitle.textContent = currentSymbol.symbol.toLowerCase();
@@ -963,7 +987,7 @@ async function placeTrade(direction) {
   tmDirectionLabel.textContent = direction === 'up' ? 'Up:' : 'Down:';
   tmAmount.textContent = amount.toFixed(0) + ' USD';
   tmFee.textContent = fee.toFixed(2) + ' USD';
-  tmReturn.textContent = expectedReturn.toFixed(2) + 'USD';
+  tmReturn.textContent = expectedReturn.toFixed(2) + ' USD';
   tmOrderNumber.textContent = 'Order number: ' + orderNumber;
   tmAgainBtn.style.display = 'none';
   openTradeModal();
@@ -986,11 +1010,13 @@ async function placeTrade(direction) {
 
   setTimeout(async () => {
     clearInterval(countdownTimer);
+
     let exitPrice;
     try {
       exitPrice = await fetchLivePrice(currentSymbol.symbol);
     } catch (err) {
-      setBalance(balanceAfterStake + amount);
+      // price fetch fail হলে stake ফেরত
+      try { await incrementBalance(amount); } catch (e) {}
       if (tradeDocRef) {
         tradeDocRef.update({ status: 'error', result: 'refunded' }).catch(()=>{});
       }
@@ -1003,6 +1029,7 @@ async function placeTrade(direction) {
       return;
     }
 
+    // forcedResult check
     let forcedResult = null;
     if (tradeDocRef) {
       try {
@@ -1011,6 +1038,7 @@ async function placeTrade(direction) {
       } catch (e) {}
     }
 
+    // winRate check
     let winRatePercent = null;
     try {
       const userSnap = await firebase.firestore().collection('users').doc(currentUser.uid).get();
@@ -1039,22 +1067,32 @@ async function placeTrade(direction) {
     tmResult.style.display = 'block';
 
     let resultLabel;
-    if (tie) {
-      setBalance(balanceAfterStake + amount);
-      tmResult.style.color = 'var(--gold)';
-      tmResult.textContent = '±0 USD';
-      resultLabel = 'tie';
-    } else if (won) {
-      const profit = expectedReturn;
-      const payout = amount + profit;
-      setBalance(balanceAfterStake + payout);
-      tmResult.style.color = 'var(--green)';
-      tmResult.textContent = '+' + profit.toFixed(0) + ' USD';
-      resultLabel = 'win';
-    } else {
+
+    // ✅ Win = payout, Tie = refund, Lose = কিছুই না (stake ইতিমধ্যে কাটা)
+    try {
+      if (tie) {
+        await incrementBalance(amount);
+        tmResult.style.color = 'var(--gold)';
+        tmResult.textContent = '±0 USD';
+        resultLabel = 'tie';
+      } else if (won) {
+        const profit = expectedReturn;
+        const payout = amount + profit;
+        await incrementBalance(payout);
+        tmResult.style.color = 'var(--green)';
+        tmResult.textContent = '+' + profit.toFixed(0) + ' USD';
+        resultLabel = 'win';
+      } else {
+        tmResult.style.color = 'var(--red)';
+        tmResult.textContent = '-' + amount.toFixed(0) + ' USD';
+        resultLabel = 'lose';
+      }
+    } catch (err) {
+      console.error('Balance update failed:', err);
+      try { await incrementBalance(amount); } catch (e) {}
       tmResult.style.color = 'var(--red)';
-      tmResult.textContent = '-' + amount.toFixed(0) + ' USD';
-      resultLabel = 'lose';
+      tmResult.textContent = 'Error';
+      resultLabel = 'error';
     }
 
     if (tradeDocRef) {
